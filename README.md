@@ -25,4 +25,8 @@ AdvantageScope includes the following tools:
 
 Feedback, feature requests, and bug reports are welcome on the [issues page](https://github.com/Mechanical-Advantage/AdvantageScope/issues). See the [contribution page](CONTRIBUTING.md) for more information on contributing to AdvantageScope. For non-public inquiries, please send a message to software@team6328.org.
 
+## PathPlanner fork
+
+Open **2D Field → PathPlanner** to import a PathPlanner file or project folder, preview an auto alongside telemetry, edit a path's waypoints and handles, and export a `.path` copy. See the [PathPlanner section of the 2D Field guide](docs/docs/tab-reference/2d-field.md#pathplanner) for supported files and editing details.
+
 ![Example screenshot](/docs/static/img/screenshot-light.webp)

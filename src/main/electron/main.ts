@@ -3946,7 +3946,7 @@ if (process.platform === "linux") {
   if (DISTRIBUTION === Distribution.WPILib) {
     app.setName("AdvantageScope (WPILib)");
   } else {
-    app.setName("AdvantageScope");
+    app.setName("AdvantageScope PathPlanner");
   }
 }
 

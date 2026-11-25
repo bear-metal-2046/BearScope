@@ -1404,12 +1404,12 @@ div.setting-blocks div.input:has(> div.half, > div.percent-30, > div.percent-70)
   flex-direction: row;
 }
 
-div.setting-blocks.fix-first div.input:nth-child(2) {
+div.setting-blocks.fix-first > div.input:nth-of-type(2) {
   height: 40px;
 }
 
-div.setting-blocks.fix-first div.input:nth-child(4),
-div.setting-blocks.fix-first div.input:nth-child(6) {
+div.setting-blocks.fix-first > div.input:nth-of-type(4),
+div.setting-blocks.fix-first > div.input:nth-of-type(6) {
   height: calc((100% - 105px) / 2);
   max-height: 120px;
 }
@@ -1598,7 +1598,7 @@ div.setting-blocks div.split div.selected span {
   }
 }
 
-div.setting-blocks > div:first-child {
+div.setting-blocks > div:first-of-type {
   margin-top: 5px;
 }
 
@@ -1720,6 +1720,79 @@ div.field-2d-settings {
 
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.pathplanner {
+  border-block-end: 1px solid light-dark(#ddd, #444);
+  padding: 8px;
+  font-size: 13px;
+}
+
+.field-2d-settings.ftc .pathplanner {
+  display: none;
+}
+
+.pathplanner summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.field-2d-settings .pathplanner .pathplanner-open,
+.field-2d-settings .pathplanner .pathplanner-toolbar,
+.field-2d-settings .pathplanner .pathplanner-point {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-block-start: 6px;
+}
+
+.field-2d-settings .pathplanner [hidden] {
+  display: none;
+}
+
+.field-2d-settings .pathplanner input[type="number"] {
+  box-sizing: border-box;
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+}
+
+.pathplanner-point span {
+  flex: 0 0 42%;
+  overflow-wrap: anywhere;
+}
+
+.field-2d-settings .pathplanner select {
+  width: 100%;
+  margin: 5px 0 0;
+}
+
+.field-2d-settings .pathplanner .pathplanner-toolbar select {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.pathplanner-export {
+  flex-shrink: 0;
+}
+
+.pathplanner-status,
+.pathplanner-issues,
+.pathplanner-locked,
+.pathplanner-units {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.pathplanner-status:empty,
+.pathplanner-issues:empty {
+  display: none;
+}
+
+.pathplanner-issues {
+  padding-inline-start: 18px;
 }
 
 @media (prefers-color-scheme: dark) {

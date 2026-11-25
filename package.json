@@ -1,6 +1,6 @@
 {
   "name": "advantagescope",
-  "productName": "AdvantageScope",
+  "productName": "AdvantageScope PathPlanner",
   "desktopName": "advantagescope.desktop",
   "version": "27.0.0-beta-1",
   "description": "Robot telemetry application",
@@ -96,7 +96,7 @@
     ]
   },
   "build": {
-    "appId": "org.littletonrobotics.advantagescope",
+    "appId": "org.advantagescope.pathplanner",
     "copyright": "Copyright © 2021-2026 Littleton Robotics",
     "npmRebuild": false,
     "publish": [],

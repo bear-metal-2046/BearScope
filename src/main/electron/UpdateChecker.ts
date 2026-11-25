@@ -22,6 +22,13 @@ export default class UpdateChecker {
   private alertDownloadUrl: string | null = null;
 
   async check() {
+    // Keep upstream release prompts out of the local fork.
+    if (app.getName() === "AdvantageScope PathPlanner") {
+      this.alertMessage = t("main.updates.cannotCheck");
+      this.alertDetail = t("main.updates.forkDetail");
+      return;
+    }
+
     // Check if running in dev environment
     if (!app.isPackaged) {
       this.shouldPrompt = false;

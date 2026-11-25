@@ -46,6 +46,18 @@ To see a full list of supported object types, click the `?` icon. This list also
 
 <img src="/img/tab-reference/2d-field-2.webp" alt="2D field with objects" />
 
+## PathPlanner
+
+1. Choose your FRC field and expand **PathPlanner** in the 2D Field tab settings.
+2. Use **Open files…** for individual `.path` files or **Open folder…** for the `src/main/deploy/pathplanner` folder. To preview an `.auto`, import its referenced `.path` files in the same selection.
+3. Pick a path or auto. The orange overlay uses the blue origin from the path file. For a red-side preview, choose the rotation or mirror option that matches your robot's PathPlanner configuration.
+4. To edit a path, select it under **Paths**. Drag a waypoint on the field, then drag its handles to adjust the curve. You can also pick a waypoint and enter X and Y in meters. Moving an anchor moves its handles with it. Editing a handle keeps the opposite handle aligned at interior waypoints.
+5. Use **Export .path copy** to save your edits. Put the downloaded file in your PathPlanner project's `paths` folder. Keep the original filename if an auto references it.
+
+The editor supports PathPlanner's `2025.0` file format. Edits apply to the selected path's waypoint geometry and preserve the other data in the file, including constraints and event markers. Each tab keeps its own imported files and edits for the current session. Export before closing the tab or importing another set of files. Recheck linked waypoints in PathPlanner if you move an anchor shared by multiple files.
+
+An auto overlay shows the geometry of its referenced paths. For live telemetry or replay, log PathPlanner's `setLogActivePathCallback` as a `Pose2d[]` and `setLogTargetPoseCallback` as a `Pose2d`, then drag those fields into **Poses** as **Trajectory** and **Ghost**. Add your odometry pose as **Robot** to compare it with the plan. Use the matching AdvantageScope coordinate system for your telemetry, such as **Blue Wall (FRC 2023–2026)** for WPILib blue-origin poses.
+
 ## Data Format {#data-format}
 
 Geometry data should be published as a byte-encoded struct or protobuf. Various 2D and 3D geometry types are supported, including `Pose2d`, `Pose3d`, `Translation2d`, `Translation3d`, and more.

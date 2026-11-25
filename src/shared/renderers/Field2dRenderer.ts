@@ -35,8 +35,16 @@ export default class Field2dRenderer implements TabRenderer {
   private lastFieldCenter?: [number, number];
   private isFTC = false;
   private lastCommand: Field2dRendererCommand | null = null;
+  private pathPlannerProjection?: {
+    handles: { handle: Field2dPathPlannerHandle; pixels: Translation2d }[];
+    toCanvas: (event: PointerEvent) => Translation2d;
+    toField: (pixels: Translation2d) => Translation2d;
+  };
 
-  constructor(root: HTMLElement) {
+  constructor(
+    root: HTMLElement,
+    private readonly editPathPlanner?: (handle: Field2dPathPlannerHandle, position?: Translation2d) => void
+  ) {
     this.CONTAINER = root.getElementsByClassName("field-2d-canvas-container")[0] as HTMLElement;
     this.CANVAS = root.getElementsByClassName("field-2d-canvas")[0] as HTMLCanvasElement;
     this.IMAGE = document.createElement("img");
@@ -45,6 +53,7 @@ export default class Field2dRenderer implements TabRenderer {
     this.IMAGE.addEventListener("load", () => this.imageLoadCount++);
 
     this.SCROLL_CONTAINER = root.getElementsByClassName("field-2d-scroll")[0] as HTMLElement;
+    if (editPathPlanner !== undefined) this.setupPathPlannerDrag(editPathPlanner);
     this.scrollSensor = new ScrollSensor(
       this.SCROLL_CONTAINER,
       (dx: number, dy: number, isPan: boolean, cursorX: number, cursorY: number) => {
@@ -120,6 +129,44 @@ export default class Field2dRenderer implements TabRenderer {
     });
   }
 
+  private setupPathPlannerDrag(edit: NonNullable<Field2dRenderer["editPathPlanner"]>) {
+    let drag: { id: number; handle: Field2dPathPlannerHandle; offset: Translation2d } | undefined;
+    this.SCROLL_CONTAINER.addEventListener("pointerdown", (event) => {
+      const projection = this.pathPlannerProjection;
+      if (!projection || !event.isPrimary || event.button !== 0) return;
+      const [x, y] = projection.toCanvas(event);
+      let closestDistance = 12;
+      let closest: (typeof projection.handles)[number] | undefined;
+      for (const candidate of projection.handles) {
+        const distance = Math.hypot(x - candidate.pixels[0], y - candidate.pixels[1]);
+        if (distance < closestDistance) {
+          closest = candidate;
+          closestDistance = distance;
+        }
+      }
+      if (closest === undefined) return;
+      event.preventDefault(); // Keep the same pointer from starting the normal mouse pan.
+      edit(closest.handle);
+      if (closest.handle.locked) return;
+      const [fieldX, fieldY] = projection.toField([x, y]);
+      drag = {
+        id: event.pointerId,
+        handle: closest.handle,
+        offset: [closest.handle.position[0] - fieldX, closest.handle.position[1] - fieldY]
+      };
+      this.SCROLL_CONTAINER.setPointerCapture(event.pointerId);
+    });
+    this.SCROLL_CONTAINER.addEventListener("pointermove", (event) => {
+      const projection = this.pathPlannerProjection;
+      if (drag?.id !== event.pointerId || projection === undefined) return;
+      const [x, y] = projection.toField(projection.toCanvas(event));
+      edit(drag.handle, [x + drag.offset[0], y + drag.offset[1]]);
+    });
+    this.SCROLL_CONTAINER.addEventListener("lostpointercapture", (event) => {
+      if (event.pointerId === drag?.id) drag = undefined;
+    });
+  }
+
   set2DCamera(index: number) {
     if (index >= 0 && index <= 2) {
       this.setTrackingMode(index as Field2dCameraMode);
@@ -172,7 +219,10 @@ export default class Field2dRenderer implements TabRenderer {
 
     // Get field data
     let fieldData = window.assets?.field2ds.find((field) => field.id === command.field);
-    if (!fieldData) return;
+    if (!fieldData) {
+      this.pathPlannerProjection = undefined;
+      return;
+    }
 
     if (fieldData.isFTC !== this.isFTC) {
       this.isFTC = fieldData.isFTC;
@@ -228,6 +278,7 @@ export default class Field2dRenderer implements TabRenderer {
       return;
     }
     this.lastRenderState = renderStateString;
+    this.pathPlannerProjection = undefined;
 
     // Set up canvas
     this.CANVAS.style.width = width.toString() + "px";
@@ -690,6 +741,46 @@ export default class Field2dRenderer implements TabRenderer {
             break;
         }
       });
+
+    if (this.editPathPlanner !== undefined && command.pathPlannerHandles?.length) {
+      const handles = command.pathPlannerHandles.map((handle) => ({
+        handle,
+        pixels: calcCoordinates(handle.position)
+      }));
+      this.pathPlannerProjection = {
+        handles,
+        toCanvas: (event) => {
+          const rect = this.CANVAS.getBoundingClientRect();
+          const x = event.clientX - rect.left - rect.width / 2;
+          const y = event.clientY - rect.top - rect.height / 2;
+          return [
+            width / 2 + x * Math.cos(canvasRotation) + y * Math.sin(canvasRotation),
+            height / 2 - x * Math.sin(canvasRotation) + y * Math.cos(canvasRotation)
+          ];
+        },
+        toField: ([x, y]) => [
+          Units.convert(((x - canvasFieldLeft) / canvasFieldWidth - 0.5) * fieldData.widthInches, "inches", "meters"),
+          Units.convert((0.5 - (y - canvasFieldTop) / canvasFieldHeight) * fieldData.heightInches, "inches", "meters")
+        ]
+      };
+      context.lineWidth = 2;
+      context.strokeStyle = "#ffca83";
+      context.beginPath();
+      for (const { handle, pixels } of handles) {
+        if (handle.point === "anchor") continue;
+        context.moveTo(...calcCoordinates(handle.anchor));
+        context.lineTo(...pixels);
+      }
+      context.stroke();
+      context.strokeStyle = "#282828";
+      for (const { handle, pixels } of handles) {
+        context.fillStyle = handle.locked ? "#aaa" : handle.selected ? "#ffb85c" : "white";
+        context.beginPath();
+        context.arc(...pixels, handle.point === "anchor" ? 7 : 5, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+      }
+    }
   }
 }
 
@@ -706,6 +797,16 @@ export type Field2dRendererCommand = {
   orientation: Orientation;
   size: number;
   objects: Field2dRendererCommand_AnyObj[];
+  pathPlannerHandles?: Field2dPathPlannerHandle[];
+};
+
+export type Field2dPathPlannerHandle = {
+  index: number;
+  point: "anchor" | "prevControl" | "nextControl";
+  position: Translation2d;
+  anchor: Translation2d;
+  locked: boolean;
+  selected: boolean;
 };
 
 export type Field2dRendererCommand_AnyObj =

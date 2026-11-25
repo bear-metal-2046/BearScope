@@ -21,6 +21,7 @@ import {
 } from "../../shared/geometry";
 import { ALLIANCE_KEYS, getIsRedAlliance } from "../../shared/log/RobotState";
 import {
+  Field2dPathPlannerHandle,
   Field2dRendererCommand,
   Field2dRendererCommand_AnyObj,
   Orientation
@@ -29,6 +30,7 @@ import { Units } from "../../shared/units";
 import { clampValue, createUUID } from "../../shared/util";
 import SourceList from "../SourceList";
 import Field2dController_Config from "./Field2dController_Config";
+import PathPlannerPanel from "./PathPlannerPanel";
 import TabController, { setupKeyboardControls } from "./TabController";
 
 export default class Field2dController implements TabController {
@@ -46,6 +48,7 @@ export default class Field2dController implements TabController {
   private FIELD_SOURCE: HTMLElement;
 
   private sourceList: SourceList;
+  private pathPlanner: PathPlannerPanel;
 
   private orientationSetting = Orientation.DEG_0;
   private sizeSetting: "large" | "medium" | "small" = "large";
@@ -58,6 +61,7 @@ export default class Field2dController implements TabController {
       []
     );
     this.SETTINGS = root.getElementsByClassName("field-2d-settings")[0] as HTMLElement;
+    this.pathPlanner = new PathPlannerPanel(this.SETTINGS.querySelector<HTMLDetailsElement>(".pathplanner")!);
     this.ORIENTATION_SWITCHER = this.SETTINGS.getElementsByClassName("orientation-switcher")[0] as HTMLElement;
     this.SIZE_SWITCHER = this.SETTINGS.getElementsByClassName("size-switcher")[0] as HTMLElement;
     this.FIELD_SELECT = this.SETTINGS.getElementsByClassName("field-select")[0] as HTMLSelectElement;
@@ -230,6 +234,10 @@ export default class Field2dController implements TabController {
 
   showTimeline(): boolean {
     return true;
+  }
+
+  editPathPlannerHandle(handle: Field2dPathPlannerHandle, position?: Translation2d) {
+    this.pathPlanner.handleDrag(handle, position);
   }
 
   getCommand(): Field2dRendererCommand {
@@ -503,11 +511,14 @@ export default class Field2dController implements TabController {
     }
 
     objects.reverse();
+    const overlay =
+      fieldData !== undefined && !fieldData.isFTC ? this.pathPlanner.getOverlay(fieldWidth, fieldHeight) : null;
     return {
       field: this.FIELD_SELECT.value,
       orientation: this.orientationSetting,
       size: size,
-      objects: objects
+      objects: overlay ? [...overlay.objects, ...objects] : objects,
+      pathPlannerHandles: overlay?.handles.length ? overlay.handles : undefined
     };
   }
 }

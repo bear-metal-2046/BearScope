@@ -308,7 +308,7 @@ licenses:
   title: "Licenses — AdvantageScope" # Window title for licenses page
 
 hub:
-  title: "AdvantageScope" # Main application window title
+  title: "AdvantageScope PathPlanner" # Main application window title
   titleLite: "AdvantageScope Lite" # Main application window title for AdvantageScope Lite
   titleLiteDs: "AdvantageScope Lite (DS)" # Main application window title for AdvantageScope Lite (Driver Station)
   titleWithName: "{{name}} — {{app}}" # Window title format with log/source name
@@ -388,6 +388,41 @@ hub:
     conflictTitle: "Conflicting types" # Title for conflicting types alert
     conflictMessage: "Values with conflicting types have been written to this field. Only values compatible with the initial type can be viewed and exported." # Description for conflicting types alert
 
+  pathPlanner:
+    openFiles: "Open files…"
+    openFolder: "Open folder…"
+    loading: "Reading PathPlanner files…"
+    noFiles: "Choose PathPlanner .path or .auto files."
+    readError: "{{file}} could not be read or is larger than 2 MB."
+    invalidJson: "{{file}} contains invalid JSON."
+    versionError: "{{file}} uses an unsupported format. Expected PathPlanner 2025.0."
+    pathError: "{{file}} has missing or invalid waypoints or curve handles."
+    autoError: "{{file}} has no supported path commands."
+    choreoError: "{{file}} references Choreo trajectories, which this editor does not import."
+    duplicateError: "Skipped duplicate file {{file}}."
+    missingPath: "{{file}} needs {{path}}.path. Open the pathplanner folder to load both files."
+    route: "PathPlanner route"
+    off: "Hide overlay"
+    paths: "Paths"
+    autos: "Autos"
+    side: "PathPlanner alliance transform"
+    asAuthored: "Blue (as authored)"
+    rotate: "Red (rotate 180°)"
+    mirror: "Red (mirror lengthwise)"
+    waypoint: "Waypoint to edit"
+    waypointNumber: "Waypoint {{number}}"
+    locked: "Waypoint is locked in the path file."
+    anchor: "Anchor"
+    anchorX: "Anchor X in meters"
+    anchorY: "Anchor Y in meters"
+    incoming: "In handle"
+    incomingX: "Incoming handle X in meters"
+    incomingY: "Incoming handle Y in meters"
+    outgoing: "Out handle"
+    outgoingX: "Outgoing handle X in meters"
+    outgoingY: "Outgoing handle Y in meters"
+    units: "X, Y in meters from the blue origin"
+    export: "Export .path copy"
   field:
     poses: "Poses" # Title for the poses source list in the 2D/3D field views
     label: "Field" # Field label for 2D/3D field select section
@@ -918,6 +953,7 @@ main:
     incompleteDetail: "Checking for update information. Please try again." # Details for incomplete update check
     cannotCheck: "Cannot check for updates" # Error message when update checker fails
     devEnvDetail: "This app is running in a development environment." # Detail explanation for dev env update fail
+    forkDetail: "This fork is distributed as a local build."
     fetchFailedDetail: "Failed to retrieve update information from GitHub. Please check your internet connection and try again." # Detail explanation for net fetch update fail
     noData: "No update data available" # Error message when no release info is found
     noDataDetail: "No update information was found for the installed version of AdvantageScope. Please check the AdvantageScope GitHub repository to download the latest release." # Detail explanation for no update data

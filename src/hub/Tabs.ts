@@ -540,10 +540,14 @@ export default class Tabs {
         controller = new LineGraphController(controlsElement);
         renderer = new LineGraphRenderer(rendererElement, true);
         break;
-      case TabType.Field2d:
-        controller = new Field2dController(controlsElement);
-        renderer = new Field2dRenderer(rendererElement);
+      case TabType.Field2d: {
+        const fieldController = new Field2dController(controlsElement);
+        controller = fieldController;
+        renderer = new Field2dRenderer(rendererElement, (handle, position) => {
+          fieldController.editPathPlannerHandle(handle, position);
+        });
         break;
+      }
       case TabType.Field3d:
         controller = new Field3dController(controlsElement);
         renderer = new Field3dRenderer(rendererElement);
