@@ -1723,6 +1723,7 @@ div.field-2d-settings {
 }
 
 .pathplanner {
+  color-scheme: light dark;
   border-block-end: 1px solid light-dark(#ddd, #444);
   padding: 8px;
   font-size: 13px;
@@ -1737,6 +1738,18 @@ div.field-2d-settings {
   font-weight: 600;
 }
 
+.pathplanner button {
+  padding: 3px 6px;
+  border: 1px solid light-dark(#ccc, #555);
+  background-color: light-dark(#f5f5f5, #303030);
+  color: inherit;
+  font: inherit;
+}
+
+.pathplanner button:disabled {
+  opacity: 0.5;
+}
+
 .field-2d-settings .pathplanner .pathplanner-open,
 .field-2d-settings .pathplanner .pathplanner-toolbar,
 .field-2d-settings .pathplanner .pathplanner-point {
@@ -1744,6 +1757,10 @@ div.field-2d-settings {
   align-items: center;
   gap: 4px;
   margin-block-start: 6px;
+}
+
+.pathplanner-open {
+  flex-wrap: wrap;
 }
 
 .field-2d-settings .pathplanner [hidden] {
@@ -1758,12 +1775,16 @@ div.field-2d-settings {
   margin: 0;
 }
 
+.pathplanner input:focus-visible {
+  outline: 2px solid #446ce3;
+}
+
 .pathplanner-point span {
   flex: 0 0 42%;
   overflow-wrap: anywhere;
 }
 
-.field-2d-settings .pathplanner select {
+.field-2d-settings .pathplanner select:not(.field-select) {
   width: 100%;
   margin: 5px 0 0;
 }
