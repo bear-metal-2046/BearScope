@@ -163,11 +163,14 @@
               <button type="button" data-i18n="hub.pathPlanner.openFolder"></button>
               <input type="file" accept=".path,.auto" multiple hidden />
               <input type="file" webkitdirectory hidden />
+              <button class="pathplanner-link" type="button" data-i18n="hub.pathPlanner.linkProject" hidden></button>
+              <button class="pathplanner-telemetry" type="button" data-i18n="hub.pathPlanner.addTelemetry"></button>
             </div>
             <p class="pathplanner-status" role="status"></p>
+            <p class="pathplanner-telemetry-status pathplanner-status" role="status"></p>
             <ul class="pathplanner-issues"></ul>
             <select class="pathplanner-route" disabled data-i18n="[aria-label]hub.pathPlanner.route">
-              <option data-i18n="hub.pathPlanner.off"></option>
+              <option value="" data-i18n="hub.pathPlanner.off"></option>
             </select>
             <select class="pathplanner-side" disabled data-i18n="[aria-label]hub.pathPlanner.side">
               <option value="blue" data-i18n="hub.pathPlanner.asAuthored"></option>
@@ -537,6 +540,9 @@
 
       <!-- Metadata -->
       <div id="controller12"></div>
+
+      <!-- PathPlanner -->
+      <div id="controller13"></div>
     </span>
 
     <span id="rendererTemplates" hidden>
@@ -746,6 +752,18 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+      <!-- PathPlanner -->
+      <div id="renderer13" class="pathplanner-workspace">
+        <div class="tab-centered">
+          <p class="pathplanner-workspace-state" role="status" data-i18n="hub.pathPlannerWorkspace.loading"></p>
+          <button
+            class="pathplanner-workspace-retry"
+            type="button"
+            data-i18n="hub.pathPlannerWorkspace.retry"
+            hidden
+          ></button>
         </div>
       </div>
     </span>

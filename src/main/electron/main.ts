@@ -86,6 +86,8 @@ import {
   TYPE_MEMORY_FILENAME,
   WINDOW_ICON
 } from "./ElectronConstants";
+import PathPlannerProjectLinks from "./PathPlannerProject";
+import PathPlannerWorkspace from "./PathPlannerWorkspace";
 import StateTracker, { ApplicationState, SatelliteWindowState, WindowState } from "./StateTracker";
 import UpdateChecker from "./UpdateChecker";
 import { VideoProcessor } from "./VideoProcessor";
@@ -125,6 +127,8 @@ let menuTemplate: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] | 
 
 let stateTracker = new StateTracker();
 let updateChecker = new UpdateChecker();
+const pathPlannerWorkspace = new PathPlannerWorkspace(sendMessage);
+const pathPlannerProjects = new PathPlannerProjectLinks(sendMessage);
 let firstOpenPath: string | null = null; // Cache path to open immediately
 
 let advantageScopeAssets: AdvantageScopeAssets = {
@@ -254,6 +258,22 @@ async function handleHubMessage(window: BrowserWindow, message: NamedMessage) {
   if (window.isDestroyed()) return;
   let windowId = window.id;
   switch (message.name) {
+    case "pathplanner-workspace-viewport":
+      pathPlannerWorkspace.update(window, message.data);
+      break;
+
+    case "pathplanner-workspace-close":
+      pathPlannerWorkspace.close(window);
+      break;
+
+    case "pathplanner-project-link":
+      await pathPlannerProjects.choose(window, message.data);
+      break;
+
+    case "pathplanner-project-unlink":
+      pathPlannerProjects.close(window, message.data);
+      break;
+
     case "show":
       window.show();
       break;
@@ -1533,7 +1553,7 @@ setInterval(() => {
 function newTabPopup(window: BrowserWindow, rect: ButtonRect & { isRtl?: boolean }) {
   if (!hubWindows.includes(window)) return;
   const newTabMenu = new Menu();
-  getAllTabTypes()
+  getAllTabTypes(PathPlannerWorkspace.isAvailable())
     .slice(1)
     .forEach((tabType) => {
       newTabMenu.append(
@@ -2611,7 +2631,7 @@ function setupMenu() {
       submenu: [
         {
           label: t("menu.tabs.newTab"),
-          submenu: getAllTabTypes()
+          submenu: getAllTabTypes(PathPlannerWorkspace.isAvailable())
             .slice(1)
             .map((tabType) => {
               return {
@@ -4024,6 +4044,11 @@ app.whenReady().then(async () => {
     targetWindow.webContents.once("dom-ready", () => {
       openFilesSmart([firstOpenPath!], targetWindow!);
     });
+  }
+
+  if (targetWindow !== null && process.argv.includes("--pathplanner") && PathPlannerWorkspace.isAvailable()) {
+    const window = targetWindow;
+    window.webContents.once("dom-ready", () => sendMessage(window, "new-tab", TabType.PathPlanner));
   }
 
   // Create new window if activated while none exist

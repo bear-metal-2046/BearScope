@@ -20,13 +20,16 @@ enum TabType {
   Swerve,
   Mechanism,
   Points,
-  Metadata
+  Metadata,
+  PathPlanner
 }
 
 export default TabType;
 
-export function getAllTabTypes(): TabType[] {
-  return Object.values(TabType).filter((tabType) => typeof tabType === "number") as TabType[];
+export function getAllTabTypes(includePathPlanner = false): TabType[] {
+  return Object.values(TabType).filter(
+    (tabType) => typeof tabType === "number" && (includePathPlanner || tabType !== TabType.PathPlanner)
+  ) as TabType[];
 }
 
 export const LITE_COMPATIBLE_TABS =
@@ -76,6 +79,8 @@ export function getDefaultTabTitle(type: TabType): string {
       return t("tabs.points");
     case TabType.Metadata:
       return t("tabs.metadata");
+    case TabType.PathPlanner:
+      return "PathPlanner";
     default:
       return "";
   }
@@ -109,6 +114,8 @@ export function getTabIcon(type: TabType): string {
       return "📍";
     case TabType.Metadata:
       return "🔍";
+    case TabType.PathPlanner:
+      return "🛤";
     default:
       return "";
   }
@@ -144,6 +151,8 @@ export function getTabAccelerator(type: TabType): string {
           return "P";
         case TabType.Metadata:
           return "I";
+        case TabType.PathPlanner:
+          return "A";
         default:
           return "";
       }

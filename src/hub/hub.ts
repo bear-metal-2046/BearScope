@@ -581,6 +581,15 @@ setInterval(() => {
 
 async function handleMainMessage(message: NamedMessage) {
   switch (message.name) {
+    case "pathplanner-workspace-state":
+      window.tabs.setPathPlannerWorkspaceState(message.data);
+      break;
+
+    case "pathplanner-project-snapshot":
+    case "pathplanner-project-invalid":
+      window.tabs.updatePathPlannerProject(message.data, message.name === "pathplanner-project-invalid");
+      break;
+
     case "show-when-ready":
       // Wait for DOM updates to finish
       window.requestAnimationFrame(() => {

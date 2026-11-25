@@ -391,6 +391,15 @@ hub:
   pathPlanner:
     openFiles: "Open files…"
     openFolder: "Open folder…"
+    linkProject: "Link project…"
+    unlinkProject: "Unlink project"
+    linkedProject: "Watching project files"
+    projectError: "Could not read the linked PathPlanner project. Unlink it and choose the folder again."
+    invalidProject: "Choose the robot project or its PathPlanner deploy folder."
+    emptyProject: "The linked project has no supported paths yet."
+    addTelemetry: "Add robot telemetry"
+    telemetryAdded: "PathPlanner telemetry is in Poses."
+    telemetryMissing: "Open a log or connect to a robot publishing PathPlanner pose data."
     loading: "Reading PathPlanner files…"
     noFiles: "Choose PathPlanner .path or .auto files."
     readError: "{{file}} could not be read or is larger than 2 MB."
@@ -423,6 +432,14 @@ hub:
     outgoingY: "Outgoing handle Y in meters"
     units: "X, Y in meters from the blue origin"
     export: "Export .path copy"
+  pathPlannerWorkspace:
+    loading: "Opening PathPlanner…"
+    ready: "PathPlanner is running."
+    failed: "PathPlanner could not open."
+    closed: "PathPlanner was closed."
+    busy: "PathPlanner is open in another AdvantageScope window."
+    unavailable: "The embedded PathPlanner workspace requires the bundled Windows desktop build."
+    retry: "Open PathPlanner"
   field:
     poses: "Poses" # Title for the poses source list in the 2D/3D field views
     label: "Field" # Field label for 2D/3D field select section

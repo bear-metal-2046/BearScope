@@ -27,6 +27,10 @@ Feedback, feature requests, and bug reports are welcome on the [issues page](htt
 
 ## PathPlanner fork
 
-Open **2D Field → PathPlanner** to import a PathPlanner file or project folder, preview an auto alongside telemetry, edit a path's waypoints and handles, and export a `.path` copy. See the [PathPlanner section of the 2D Field guide](docs/docs/tab-reference/2d-field.md#pathplanner) for supported files and editing details.
+The Windows build runs the full AdvantageScope desktop app and bundles PathPlanner 2026.1.2. Open **Tabs → New Tab → PathPlanner** to use the upstream workspace inside the desktop window. Open **2D Field → PathPlanner → Link project…** to follow changes to the same robot project's saved paths and autos while viewing a log or live telemetry.
+
+For quick edits in the 2D Field tab, import a `.path` file, drag its waypoints and handles, and export a copy. See the [2D Field guide](docs/docs/tab-reference/2d-field.md#pathplanner) for the complete workflow.
+
+On Windows, `npm run pathplanner:prepare` verifies the upstream release archive and builds the native host. The normal desktop build scripts run this step automatically. The bundled PathPlanner release is distributed with its [MIT license](PATHPLANNER-LICENSE).
 
 ![Example screenshot](/docs/static/img/screenshot-light.webp)

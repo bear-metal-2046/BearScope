@@ -14,8 +14,9 @@
   "scripts": {
     "start": "electron bundles/main.js",
     "compile": "rolldown -c",
-    "build": "npm run compile && npm run wasm:compile && npm run docs:build-embed && electron-builder build",
-    "fast-build": "npm run compile && npm run wasm:compile && npm run docs:build-embed && electron-builder build --dir",
+    "build": "npm run compile && npm run wasm:compile && npm run docs:build-embed && npm run pathplanner:prepare && electron-builder build",
+    "fast-build": "npm run compile && npm run wasm:compile && npm run docs:build-embed && npm run pathplanner:prepare && electron-builder build --dir",
+    "pathplanner:prepare": "node preparePathPlanner.mjs",
     "watch": "rolldown -c -w",
     "download-owlet": "rolldown -c --configRunOwletDownload && node runOwletDownload.js",
     "format": "license-check-and-add add -f file-header-config.json && prettier --write .",
@@ -261,7 +262,13 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "icons/app/app-icon.ico"
+      "icon": "icons/app/app-icon.ico",
+      "extraResources": [
+        {
+          "from": "vendor/pathplanner",
+          "to": "pathplanner"
+        }
+      ]
     }
   }
 }

@@ -1061,6 +1061,18 @@ div.timeline-scroll-content {
 
 /* Tab layout */
 
+.pathplanner-workspace {
+  position: absolute;
+  inset: 0;
+}
+
+.pathplanner-workspace-retry {
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  color: inherit;
+  font: inherit;
+}
+
 div.renderer-content {
   position: absolute;
   inset-inline-start: 0%;

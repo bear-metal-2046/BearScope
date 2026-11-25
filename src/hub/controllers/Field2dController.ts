@@ -5,6 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
+import type { PathPlannerProjectSnapshot } from "../../main/electron/PathPlannerProject";
 import { getAssetName } from "../../shared/AdvantageScopeAssets";
 import { SourceListItemState, SourceListState } from "../../shared/SourceListConfig";
 import {
@@ -19,6 +20,7 @@ import {
   grabPosesAuto,
   rotation3dTo2d
 } from "../../shared/geometry";
+import { findKey } from "../../shared/log/LogKeyUtils";
 import { ALLIANCE_KEYS, getIsRedAlliance } from "../../shared/log/RobotState";
 import {
   Field2dPathPlannerHandle,
@@ -61,7 +63,13 @@ export default class Field2dController implements TabController {
       []
     );
     this.SETTINGS = root.getElementsByClassName("field-2d-settings")[0] as HTMLElement;
-    this.pathPlanner = new PathPlannerPanel(this.SETTINGS.querySelector<HTMLDetailsElement>(".pathplanner")!);
+    this.pathPlanner = new PathPlannerPanel(
+      this.SETTINGS.querySelector<HTMLDetailsElement>(".pathplanner")!,
+      () => this.UUID
+    );
+    this.SETTINGS.querySelector<HTMLButtonElement>(".pathplanner-telemetry")!.addEventListener("click", () => {
+      this.addPathPlannerTelemetry();
+    });
     this.ORIENTATION_SWITCHER = this.SETTINGS.getElementsByClassName("orientation-switcher")[0] as HTMLElement;
     this.SIZE_SWITCHER = this.SETTINGS.getElementsByClassName("size-switcher")[0] as HTMLElement;
     this.FIELD_SELECT = this.SETTINGS.getElementsByClassName("field-select")[0] as HTMLSelectElement;
@@ -238,6 +246,34 @@ export default class Field2dController implements TabController {
 
   editPathPlannerHandle(handle: Field2dPathPlannerHandle, position?: Translation2d) {
     this.pathPlanner.handleDrag(handle, position);
+  }
+
+  updatePathPlannerProject(snapshot: PathPlannerProjectSnapshot, invalid: boolean) {
+    this.pathPlanner.updateProject(snapshot, invalid);
+  }
+
+  disposePathPlanner() {
+    this.pathPlanner.unlinkProject();
+  }
+
+  private addPathPlannerTelemetry() {
+    const sources = [...this.sourceList.getState()];
+    let found = false;
+    const add = (topic: string, logType: string, type: string, options: SourceListItemState["options"]) => {
+      const bareKey = `/PathPlanner/${topic}`;
+      const logKey = findKey(window.log, [`NT:${bareKey}`, bareKey]);
+      if (logKey === undefined || window.log.getStructuredType(logKey) !== logType) return;
+      found = true;
+      if (sources.some((source) => source.logKey === logKey && source.type === type)) return;
+      sources.push({ type, logKey, logType, visible: true, options });
+    };
+    add("currentPose", "Pose2d", "robot", { bumpers: "" });
+    add("targetPose", "Pose2d", "ghost", { color: "#00ffff", fadeOut: "off" });
+    add("activePath", "Pose2d[]", "trajectory", { color: "#00ff00", size: "normal" });
+    if (found) this.sourceList.setState(sources);
+    this.SETTINGS.querySelector<HTMLElement>(".pathplanner-telemetry-status")!.textContent = window.t(
+      found ? "hub.pathPlanner.telemetryAdded" : "hub.pathPlanner.telemetryMissing"
+    );
   }
 
   getCommand(): Field2dRendererCommand {

@@ -5,6 +5,8 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
+import type { PathPlannerProjectSnapshot } from "../../main/electron/PathPlannerProject";
+import { IS_LITE } from "../../shared/buildConstants";
 import type { Translation2d } from "../../shared/geometry";
 import type {
   Field2dPathPlannerHandle,
@@ -30,12 +32,18 @@ export default class PathPlannerPanel {
   private readonly points: HTMLElement[];
   private readonly status: HTMLElement;
   private readonly issues: HTMLUListElement;
+  private readonly link: HTMLButtonElement;
   private paths: PathPlannerPath[] = [];
   private autos: PathPlannerAuto[] = [];
+  private project?: string;
+  private revision = 0;
   private fieldSize: Translation2d = [0, 0];
   private cachedOverlay?: { key: string; objects: Field2dRendererCommand_TrajectoryObj[] };
 
-  constructor(private readonly root: HTMLDetailsElement) {
+  constructor(
+    private readonly root: HTMLDetailsElement,
+    private readonly getTabId: () => string
+  ) {
     this.route = root.querySelector<HTMLSelectElement>(".pathplanner-route")!;
     this.side = root.querySelector<HTMLSelectElement>(".pathplanner-side")!;
     this.waypoint = root.querySelector<HTMLSelectElement>(".pathplanner-waypoint")!;
@@ -43,6 +51,12 @@ export default class PathPlannerPanel {
     this.points = Array.from(this.editor.querySelectorAll<HTMLElement>(".pathplanner-point"));
     this.status = root.querySelector<HTMLElement>(".pathplanner-status")!;
     this.issues = root.querySelector<HTMLUListElement>(".pathplanner-issues")!;
+    this.link = root.querySelector<HTMLButtonElement>(".pathplanner-link")!;
+    this.link.hidden = IS_LITE;
+    this.link.addEventListener("click", () => {
+      if (this.project !== undefined) this.unlinkProject();
+      else window.sendMainMessage("pathplanner-project-link", this.getTabId());
+    });
 
     const pickers = Array.from(root.querySelectorAll<HTMLInputElement>('input[type="file"]'));
     const openButtons = root.querySelectorAll<HTMLButtonElement>(".pathplanner-open button");
@@ -52,6 +66,7 @@ export default class PathPlannerPanel {
         const files = Array.from(picker.files ?? []);
         picker.value = "";
         if (files.length === 0) return;
+        this.unlinkProject();
         openButtons.forEach((button) => (button.disabled = true));
         this.status.textContent = window.t("hub.pathPlanner.loading");
         this.issues.replaceChildren();
@@ -85,14 +100,52 @@ export default class PathPlannerPanel {
     return this.paths[index];
   }
 
-  private async load(files: File[]) {
+  updateProject(snapshot: PathPlannerProjectSnapshot, invalid: boolean) {
+    if (invalid) {
+      this.status.textContent = window.t("hub.pathPlanner.invalidProject");
+      return;
+    }
+    const sameProject = this.project === snapshot.folder;
+    this.project = snapshot.folder;
+    this.status.title = snapshot.folder;
+    this.link.textContent = window.t("hub.pathPlanner.unlinkProject");
+    if (snapshot.error) {
+      ++this.revision;
+      this.status.textContent = window.t("hub.pathPlanner.projectError");
+      this.updateWaypoints();
+      return;
+    }
+    void this.load(
+      snapshot.files.map(({ name, text }) => new File([text], name)),
+      sameProject
+    );
+  }
+
+  unlinkProject() {
+    window.sendMainMessage("pathplanner-project-unlink", this.getTabId());
+    if (this.project === undefined) return;
+    ++this.revision;
+    this.project = undefined;
+    this.status.title = "";
+    this.status.textContent = "";
+    this.link.textContent = window.t("hub.pathPlanner.linkProject");
+    this.updateWaypoints();
+  }
+
+  private async load(files: File[], preserveSelection = false) {
+    const revision = ++this.revision;
     const { paths, autos, issues } = await importPathPlannerFiles(files);
+    if (revision !== this.revision) return;
+    const previous = this.route.value;
+    const linked = this.project !== undefined;
+    this.issues.replaceChildren();
     for (const issue of issues) {
       const item = document.createElement("li");
       item.textContent = window.t(`hub.pathPlanner.${issue.key}`, issue);
       this.issues.appendChild(item);
     }
-    if (paths.length + autos.length === 0) {
+    const empty = paths.length + autos.length === 0;
+    if (empty && !linked) {
       this.status.textContent = window.t("hub.pathPlanner.noFiles");
       return;
     }
@@ -108,20 +161,24 @@ export default class PathPlannerPanel {
       if (routes.length === 0) continue;
       const group = document.createElement("optgroup");
       group.label = window.t(`hub.pathPlanner.${label}`);
-      for (const route of routes) group.appendChild(new Option(route.name));
+      for (const route of routes) group.appendChild(new Option(route.name, `${label}/${route.name}`));
       this.route.appendChild(group);
     }
-    this.route.selectedIndex = this.autos.length > 0 ? 1 + this.paths.length : 1;
-    this.route.disabled = false;
-    this.side.disabled = false;
-    this.status.textContent = "";
+    this.route.selectedIndex = empty ? 0 : this.autos.length > 0 ? 1 + this.paths.length : 1;
+    if (preserveSelection && [...this.route.options].some((option) => option.value === previous))
+      this.route.value = previous;
+    this.route.disabled = empty;
+    this.side.disabled = empty;
+    this.status.textContent = linked
+      ? window.t(empty ? "hub.pathPlanner.emptyProject" : "hub.pathPlanner.linkedProject")
+      : "";
     this.cachedOverlay = undefined;
     this.updateWaypoints();
   }
 
   private updateWaypoints() {
     const path = this.selectedPath;
-    this.editor.hidden = path === undefined;
+    this.editor.hidden = path === undefined || this.project !== undefined;
     this.waypoint.replaceChildren();
     if (path === undefined) return;
     path.document.waypoints.forEach((_, index) => {
@@ -176,7 +233,7 @@ export default class PathPlannerPanel {
   }
 
   handleDrag(handle: Field2dPathPlannerHandle, position?: Translation2d) {
-    if (!this.root.open || this.selectedPath === undefined) return;
+    if (!this.root.open || this.selectedPath === undefined || this.project !== undefined) return;
     this.waypoint.selectedIndex = handle.index;
     if (position === undefined) {
       this.updatePointInputs();
@@ -207,7 +264,7 @@ export default class PathPlannerPanel {
       };
     }
     const handles: Field2dPathPlannerHandle[] = [];
-    if (selectedPath !== undefined && this.root.open) {
+    if (selectedPath !== undefined && this.root.open && this.project === undefined) {
       selectedPath.document.waypoints.forEach((waypoint, index) => {
         const selected = this.waypoint.selectedIndex === index;
         for (const point of selected ? pointKeys : (["anchor"] as const)) {

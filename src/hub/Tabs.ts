@@ -5,6 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
+import type { PathPlannerProjectSnapshot } from "../main/electron/PathPlannerProject";
 import { TabsState } from "../shared/HubState";
 import LineGraphFilter from "../shared/LineGraphFilter";
 import TabType, { getDefaultTabTitle, getTabIcon } from "../shared/TabType";
@@ -26,6 +27,7 @@ import TableRenderer from "../shared/renderers/TableRenderer";
 import VideoRenderer from "../shared/renderers/VideoRenderer";
 import { Units } from "../shared/units";
 import { clampValue } from "../shared/util";
+import PathPlannerWorkspaceRenderer from "./PathPlannerWorkspaceRenderer";
 import ScrollSensor, { ScrollSensorMouseControl } from "./ScrollSensor";
 import Timeline from "./Timeline";
 import ConsoleController from "./controllers/ConsoleController";
@@ -97,6 +99,7 @@ export default class Tabs {
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Mechanism, undefined);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Points, undefined);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Metadata, 0);
+    this.FIXED_CONTROL_HEIGHTS.set(TabType.PathPlanner, 0);
 
     // Hover and click handling
     let mouseDownInfo: [number, number] | null = null;
@@ -442,6 +445,8 @@ export default class Tabs {
   /** Restores to the provided state. */
   restoreState(state: TabsState) {
     this.tabList.forEach((tab) => {
+      if (tab.renderer instanceof PathPlannerWorkspaceRenderer) tab.renderer.close();
+      if (tab.controller instanceof Field2dController) tab.controller.disposePathPlanner();
       this.RENDERER_CONTENT.removeChild(tab.rendererElement);
       this.CONTROLS_CONTENT.removeChild(tab.controlsElement);
     });
@@ -516,8 +521,8 @@ export default class Tabs {
   /** Creates a new tab. */
   addTab(type: TabType) {
     // Select existing metadata tab
-    if (type === TabType.Metadata) {
-      let existingIndex = this.tabList.findIndex((tab) => tab.type === TabType.Metadata);
+    if (type === TabType.Metadata || type === TabType.PathPlanner) {
+      let existingIndex = this.tabList.findIndex((tab) => tab.type === type);
       if (existingIndex >= 0) {
         this.setSelected(existingIndex);
         return;
@@ -588,6 +593,10 @@ export default class Tabs {
         controller = new MetadataController();
         renderer = new MetadataRenderer(rendererElement);
         break;
+      case TabType.PathPlanner:
+        controller = new NoopController();
+        renderer = new PathPlannerWorkspaceRenderer(rendererElement);
+        break;
       default:
         controller = new NoopController();
         renderer = new NoopRenderer();
@@ -632,12 +641,22 @@ export default class Tabs {
 
   /** Create new sallite for current tab. */
   newSatellite() {
-    if (this.selectedTab >= 0) {
+    if (this.selectedTab >= 0 && this.getSelectedTabType() !== TabType.PathPlanner) {
       window.sendMainMessage("create-satellite", {
         uuid: this.tabList[this.selectedTab].controller.UUID,
         type: this.tabList[this.selectedTab].type
       });
     }
+  }
+
+  setPathPlannerWorkspaceState(state: string) {
+    const renderer = this.tabList.find((tab) => tab.type === TabType.PathPlanner)?.renderer;
+    if (renderer instanceof PathPlannerWorkspaceRenderer) renderer.setState(state);
+  }
+
+  updatePathPlannerProject(snapshot: PathPlannerProjectSnapshot, invalid: boolean) {
+    const controller = this.tabList.find((tab) => tab.controller.UUID === snapshot.id)?.controller;
+    if (controller instanceof Field2dController) controller.updatePathPlannerProject(snapshot, invalid);
   }
 
   /** Closes the specified tab. */
@@ -649,6 +668,10 @@ export default class Tabs {
     if (!force && this.tabList[index].controller.UUID === this.activeXRUUID) {
       window.sendMainMessage("confirm-xr-close", this.activeXRUUID);
     } else {
+      const renderer = this.tabList[index].renderer;
+      if (renderer instanceof PathPlannerWorkspaceRenderer) renderer.close();
+      const controller = this.tabList[index].controller;
+      if (controller instanceof Field2dController) controller.disposePathPlanner();
       this.RENDERER_CONTENT.removeChild(this.tabList[index].rendererElement);
       this.CONTROLS_CONTENT.removeChild(this.tabList[index].controlsElement);
       this.tabList.splice(index, 1);
@@ -828,8 +851,10 @@ export default class Tabs {
         item.titleElement.classList.remove("tab-selected");
         item.rendererElement.hidden = true;
         item.controlsElement.hidden = true;
+        if (item.renderer instanceof PathPlannerWorkspaceRenderer) item.renderer.hide();
       }
     });
+    this.POPUP_BUTTON.toggleAttribute("disabled", this.getSelectedTabType() === TabType.PathPlanner);
 
     // Update timeline
     this.updateTimelineVisibility();
