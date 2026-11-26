@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; object-src 'none'" />
+    <title>BearScope Documentation</title>
+    <link rel="stylesheet" href="bearscope-docs.css" />
+  </head>
+  <body>
+    <header>
+      <img src="bear-metal.png" alt="" width="48" height="48" />
+      <div>
+        <div class="team">Bear Metal 2046</div>
+        <h1>BearScope Documentation</h1>
+      </div>
+    </header>
+    <div class="layout">
+      <nav aria-label="On this page">
+        <a href="#start">Get started</a>
+        <a href="#edit">Edit paths and autos</a>
+        <a href="#field">Load paths in 2D Field</a>
+        <a href="#replay">Analyze a replay</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+        <a href="#development">Run from VS Code</a>
+      </nav>
+      <main>
+        <section id="start">
+          <h2>Get started</h2>
+          <p>
+            BearScope brings the PathPlanner editor and robot log replay into one desktop app. Use the editor to plan an
+            auto, then use 2D Field to compare the plan with a recorded run.
+          </p>
+          <ol>
+            <li>On Windows, extract the entire BearScope ZIP and open <code>BearScope.exe</code>.</li>
+            <li>
+              Click <strong>+</strong> in the tab bar and choose <strong>PathPlanner</strong>. Click
+              <strong>Open Robot Project</strong> and select the root of your robot project.
+            </li>
+            <li>
+              In <strong>2D Field</strong>, expand <strong>PathPlanner</strong> and click
+              <strong>Load Current Project</strong>. Pick a path or auto from the route list.
+            </li>
+          </ol>
+          <p>
+            <strong>PathPlanner Help</strong> in the editor opens this guide. You can also add it from the
+            <strong>+</strong> menu.
+          </p>
+        </section>
+        <section id="edit">
+          <h2>Edit paths and autos</h2>
+          <p>
+            Use the <strong>PathPlanner</strong> tab to create paths and autos, adjust waypoints, rotation targets and
+            constraints, and add event markers. The project drawer also opens robot settings, the navigation grid, and
+            the telemetry view. Changes saved in the editor go into the robot project's deploy folder.
+          </p>
+          <h3>Quick waypoint edits in 2D Field</h3>
+          <p>
+            The quick editor supports PathPlanner's <code>2025.0</code> file format. It edits waypoint geometry and
+            preserves constraints and event markers. Export your copy before selecting another set of files or closing
+            the tab.
+          </p>
+          <ol>
+            <li>
+              In the 2D Field PathPlanner panel, use <strong>Open files…</strong> or <strong>Open folder…</strong> to
+              import a copy. To load an auto, include all referenced paths.
+            </li>
+            <li>
+              Select an individual path. Drag a waypoint or its handles on the field, or enter coordinates in meters.
+              Locked waypoints stay in place.
+            </li>
+            <li>
+              Click <strong>Export .path copy</strong>. Place the exported file in your project's
+              <code>paths</code> folder when you're ready to use it. Preserve its filename if an auto references it.
+            </li>
+          </ol>
+        </section>
+        <section id="field">
+          <h2>Load paths in 2D Field</h2>
+          <dl>
+            <dt>Load Current Project</dt>
+            <dd>Links the folder open in the PathPlanner editor and refreshes the overlay when files are saved.</dd>
+            <dt>Link project…</dt>
+            <dd>
+              Follows the active editor project or offers a folder picker when no editor project is open. Choose the
+              robot root or its PathPlanner deploy folder.
+            </dd>
+            <dt>Open files… / Open folder…</dt>
+            <dd>
+              Imports a snapshot for viewing or quick waypoint edits. Use <strong>Unlink project</strong> to stop
+              following a linked folder.
+            </dd>
+            <dt>Add robot telemetry</dt>
+            <dd>
+              Adds available PathPlanner current pose, target pose, and active path topics to
+              <strong>Poses</strong> from a live connection or a log.
+            </dd>
+          </dl>
+          <p>
+            The orange line shows the authored route. Choose the correct FRC field and alliance transform. Match the
+            rotate or mirror option to your robot's PathPlanner configuration when reviewing a red-alliance run.
+          </p>
+        </section>
+        <section id="replay">
+          <h2>Analyze a replay</h2>
+          <p>
+            Open a robot log, select the route used for that run, and expand
+            <strong>2D Field → PathPlanner → Replay analysis</strong>.
+          </p>
+          <h3>Planned vs. actual</h3>
+          <p>
+            Enable <strong>Show recorded trail and tracking error</strong>. The cyan trail is the recorded robot motion.
+            Scrub the main timeline to move the cursor through the position error plot in meters and the absolute
+            heading error plot in degrees.
+          </p>
+          <p>
+            Record blue-origin <code>/PathPlanner/currentPose</code> and <code>/PathPlanner/targetPose</code> as WPILib
+            <code>Pose2d</code> fields. Error uses the latest target at or before the actual sample. With current pose
+            alone, you can still see the trail.
+          </p>
+          <h3>Auto events</h3>
+          <p>
+            Record command activity as boolean fields under <code>CommandsUnique</code>, <code>CommandsAll</code>, or
+            <code>/PathPlanner/Events</code>. Click a recorded start or finish to jump to that point in the log. A
+            planned marker with an exact logged name match jumps to the first recorded start. The list shows the first
+            200 recorded transitions.
+          </p>
+          <h3>Waypoint comparison</h3>
+          <p>
+            Choose a waypoint under <strong>Compare waypoint across runs</strong>. Each result shows the closest
+            recorded sample and its distance from that waypoint. Click it to jump to the sample. With robot-mode data,
+            results use autonomous intervals. Otherwise, each recorded pose series counts as one run. Merge aligned logs
+            in BearScope to compare several matches.
+          </p>
+          <p class="note">
+            Example: If a waypoint result is 0.28 m away, the closest logged pose in that run was 28 cm from the
+            waypoint. It measures distance to the pose sample.
+          </p>
+        </section>
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+          <dl>
+            <dt>The PathPlanner tab is missing or blank</dt>
+            <dd>
+              Use the full Windows desktop build. If the editor reports a failure, click <strong>Retry</strong>. If the
+              tab still looks wrong after an update, close BearScope and reopen the new build.
+            </dd>
+            <dt>Load Current Project says to open a project</dt>
+            <dd>Open the robot project in the editor first, then return to 2D Field and click the button again.</dd>
+            <dt>An auto is missing paths</dt>
+            <dd>
+              Check that every path referenced by the auto is present and that the file names match. Load the whole
+              deploy folder to include both <code>paths</code> and <code>autos</code>.
+            </dd>
+            <dt>No error graph or event jumps</dt>
+            <dd>
+              Check the log for target pose and boolean command telemetry. A planned event marker without a logged match
+              has no timestamp.
+            </dd>
+          </dl>
+        </section>
+        <section id="development">
+          <h2>Run from VS Code</h2>
+          <p>
+            Open the BearScope source folder, save your edits, and press <strong>F5</strong>. Choose
+            <strong>Run BearScope with PathPlanner</strong> if prompted. The task compiles the app and prepares the
+            Windows editor. Close the running copy before rebuilding the native helper.
+          </p>
+          <p>With dependencies installed, you can also run these from the VS Code terminal:</p>
+          <pre><code>npm.cmd run compile
+npm.cmd run pathplanner:prepare
+npm.cmd start</code></pre>
+          <p>
+            The Dart editor lives in <code>pathplanner/lib</code>. The repository README includes the Flutter build
+            commands. This guide lives in <code>www/bearscope-docs.html</code>. Update it when a BearScope feature or
+            workflow changes.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

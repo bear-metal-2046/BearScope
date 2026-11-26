@@ -9,7 +9,7 @@ import type { PathPlannerProjectSnapshot } from "../main/electron/PathPlannerPro
 import { TabsState } from "../shared/HubState";
 import LineGraphFilter from "../shared/LineGraphFilter";
 import TabType, { getDefaultTabTitle, getTabIcon } from "../shared/TabType";
-import { Distribution, DISTRIBUTION } from "../shared/buildConstants";
+import { Distribution, DISTRIBUTION, IS_LITE } from "../shared/buildConstants";
 import { getAutonomousKey, getEnabledKey, getUtilityKey } from "../shared/log/RobotState";
 import ConsoleRenderer from "../shared/renderers/ConsoleRenderer";
 import DocumentationRenderer from "../shared/renderers/DocumentationRenderer";
@@ -100,6 +100,7 @@ export default class Tabs {
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Points, undefined);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Metadata, 0);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.PathPlanner, 0);
+    this.FIXED_CONTROL_HEIGHTS.set(TabType.BearScopeDocumentation, 0);
 
     // Hover and click handling
     let mouseDownInfo: [number, number] | null = null;
@@ -328,6 +329,7 @@ export default class Tabs {
       this.addTab(TabType.LineGraph);
       this.addTab(TabType.Field2d);
       this.addTab(TabType.Field3d);
+      if (!IS_LITE) this.addTab(TabType.BearScopeDocumentation);
       this.setSelected(1);
     }
 
@@ -520,8 +522,8 @@ export default class Tabs {
 
   /** Creates a new tab. */
   addTab(type: TabType) {
-    // Select existing metadata tab
-    if (type === TabType.Metadata || type === TabType.PathPlanner) {
+    // Reuse tabs that have one workspace per window.
+    if (type === TabType.Metadata || type === TabType.PathPlanner || type === TabType.BearScopeDocumentation) {
       let existingIndex = this.tabList.findIndex((tab) => tab.type === type);
       if (existingIndex >= 0) {
         this.setSelected(existingIndex);
@@ -595,7 +597,7 @@ export default class Tabs {
         break;
       case TabType.PathPlanner:
         controller = new NoopController();
-        renderer = new PathPlannerWorkspaceRenderer(rendererElement);
+        renderer = new PathPlannerWorkspaceRenderer(rendererElement, () => this.addTab(TabType.BearScopeDocumentation));
         break;
       default:
         controller = new NoopController();
@@ -641,7 +643,7 @@ export default class Tabs {
 
   /** Create new sallite for current tab. */
   newSatellite() {
-    if (this.selectedTab >= 0 && this.getSelectedTabType() !== TabType.PathPlanner) {
+    if (this.selectedTab >= 0 && this.canOpenSatellite()) {
       window.sendMainMessage("create-satellite", {
         uuid: this.tabList[this.selectedTab].controller.UUID,
         type: this.tabList[this.selectedTab].type
@@ -854,10 +856,15 @@ export default class Tabs {
         if (item.renderer instanceof PathPlannerWorkspaceRenderer) item.renderer.hide();
       }
     });
-    this.POPUP_BUTTON.toggleAttribute("disabled", this.getSelectedTabType() === TabType.PathPlanner);
+    this.POPUP_BUTTON.toggleAttribute("disabled", !this.canOpenSatellite());
 
     // Update timeline
     this.updateTimelineVisibility();
+  }
+
+  private canOpenSatellite() {
+    const type = this.getSelectedTabType();
+    return type !== TabType.PathPlanner && type !== TabType.BearScopeDocumentation;
   }
 
   /** Hides or shows the timeline based on the controller request. */

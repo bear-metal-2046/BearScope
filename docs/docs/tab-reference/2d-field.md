@@ -48,21 +48,7 @@ To see a full list of supported object types, click the `?` icon. This list also
 
 ## PathPlanner
 
-In the Windows desktop build, open **Tabs → New Tab → PathPlanner** to use the bundled PathPlanner workspace. There you can create and edit paths and autonomous command groups, configure the robot, preview generated trajectories, edit navigation obstacles, and use PathPlanner's telemetry view. Choose your robot project in the workspace to save edits to the project.
-
-In the 2D Field tab, expand **PathPlanner**, choose **Link project…**, and select the same robot project or its `pathplanner` deploy folder. Pick a path or auto for the overlay. The overlay refreshes as the workspace saves files. To edit the linked project, switch to the PathPlanner tab. To review PathPlannerLib pose topics published to NetworkTables or recorded in a log, click **Add robot telemetry** to add the current pose, target pose, and active path to **Poses** when those topics are available.
-
-### Quick path edits
-
-1. Choose your FRC field and expand **PathPlanner** in the 2D Field tab settings.
-2. Use **Open files…** for individual `.path` files or **Open folder…** for the `src/main/deploy/pathplanner` folder. To preview an `.auto`, import its referenced `.path` files in the same selection.
-3. Pick a path or auto. The orange overlay uses the blue origin from the path file. For a red-side preview, choose the rotation or mirror option that matches your robot's PathPlanner configuration.
-4. To edit a path, select it under **Paths**. Drag a waypoint on the field, then drag its handles to adjust the curve. You can also pick a waypoint and enter X and Y in meters. Moving an anchor moves its handles with it. Editing a handle keeps the opposite handle aligned at interior waypoints.
-5. Use **Export .path copy** to save your edits. Put the downloaded file in your PathPlanner project's `paths` folder. Keep the original filename if an auto references it.
-
-The 2D Field overlay and quick editor support PathPlanner's `2025.0` file format. Quick edits apply to the selected path's waypoint geometry and preserve constraints, event markers, and other path data. Export before closing the tab or importing another set of files. Recheck linked waypoints in PathPlanner if you move an anchor shared by multiple files.
-
-An auto overlay shows the geometry of its referenced paths. For live telemetry or replay, log PathPlanner's `setLogActivePathCallback` as a `Pose2d[]` and `setLogTargetPoseCallback` as a `Pose2d`, then drag those fields into **Poses** as **Trajectory** and **Ghost**. Add your odometry pose as **Robot** to compare it with the plan. Use the matching AdvantageScope coordinate system for your telemetry, such as **Blue Wall (FRC 2023–2026)** for WPILib blue-origin poses.
+Open **BearScope Documentation** from the **+** menu for project linking, path editing, and replay analysis. **PathPlanner Help** in the editor opens the same guide.
 
 ## Data Format {#data-format}
 

@@ -20,7 +20,7 @@ export type PathPlannerWaypoint = {
 export type PathPlannerPath = {
   name: string;
   fileName: string;
-  document: { waypoints: PathPlannerWaypoint[]; version: "2025.0" };
+  document: { waypoints: PathPlannerWaypoint[]; version: "2025.0"; eventMarkers?: unknown };
 };
 
 export type PathPlannerAuto = { name: string; paths: PathPlannerPath[] };

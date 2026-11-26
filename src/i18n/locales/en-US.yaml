@@ -219,6 +219,7 @@ xrControls:
   showRobotsTitle: "Toggle robot model visibility" # Tooltip for robot model visibility checkbox
 
 tabs:
+  bearScopeDocumentation: "BearScope Documentation"
   documentation: "Documentation" # Documentation tab name, displayed in satellite window title
   console: "Console" # Console tab name, displayed in the tab bar
   joysticks: "Joysticks" # Joysticks tab name, displayed in the tab bar
@@ -393,6 +394,19 @@ hub:
     openFolder: "Open folder…"
     linkProject: "Link project…"
     loadCurrentProject: "Load Current Project"
+    replay: "Replay analysis"
+    documentation: "PathPlanner Help"
+    compare: "Show recorded trail and tracking error"
+    errorChart: "Position and heading error across the replay"
+    compareWaypoint: "Compare waypoint across runs"
+    replayMissing: "Load a log with PathPlanner currentPose telemetry."
+    targetMissing: "Record targetPose to graph tracking error."
+    replayError: "{{meters}} m position error · {{degrees}}° heading error"
+    replayEvents: "Auto events"
+    eventStart: "{{time}} s · {{name}} started"
+    eventFinish: "{{time}} s · {{name}} finished"
+    eventPlanned: "{{name}} · planned marker"
+    waypointPass: "Run {{run}} · {{distance}} m away at {{time}} s"
     noCurrentProject: "Open a robot project in the PathPlanner tab first."
     unlinkProject: "Unlink project"
     linkedProject: "Watching project files"

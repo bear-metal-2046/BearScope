@@ -163,7 +163,12 @@
               <button type="button" data-i18n="hub.pathPlanner.openFolder"></button>
               <input type="file" accept=".path,.auto" multiple hidden />
               <input type="file" webkitdirectory hidden />
-              <button class="pathplanner-current-project" type="button" data-i18n="hub.pathPlanner.loadCurrentProject" hidden></button>
+              <button
+                class="pathplanner-current-project"
+                type="button"
+                data-i18n="hub.pathPlanner.loadCurrentProject"
+                hidden
+              ></button>
               <button class="pathplanner-link" type="button" data-i18n="hub.pathPlanner.linkProject" hidden></button>
               <button class="pathplanner-telemetry" type="button" data-i18n="hub.pathPlanner.addTelemetry"></button>
             </div>
@@ -178,6 +183,26 @@
               <option value="rotate" data-i18n="hub.pathPlanner.rotate"></option>
               <option value="mirror" data-i18n="hub.pathPlanner.mirror"></option>
             </select>
+            <details class="pathplanner-replay">
+              <summary data-i18n="hub.pathPlanner.replay"></summary>
+              <label
+                ><input type="checkbox" class="pathplanner-compare" /> <span data-i18n="hub.pathPlanner.compare"></span
+              ></label>
+              <p class="pathplanner-replay-status" role="status"></p>
+              <canvas
+                width="360"
+                height="116"
+                class="pathplanner-errors"
+                hidden
+                data-i18n="[aria-label]hub.pathPlanner.errorChart"
+              ></canvas>
+              <div class="pathplanner-events"></div>
+              <label class="pathplanner-pass-picker"
+                ><span data-i18n="hub.pathPlanner.compareWaypoint"></span>
+                <select class="pathplanner-pass-waypoint"></select>
+              </label>
+              <div class="pathplanner-passes"></div>
+            </details>
             <div class="pathplanner-editor" hidden>
               <div class="pathplanner-toolbar">
                 <select class="pathplanner-waypoint" data-i18n="[aria-label]hub.pathPlanner.waypoint"></select>
@@ -544,6 +569,7 @@
 
       <!-- PathPlanner -->
       <div id="controller13"></div>
+      <div id="controller14"></div>
     </span>
 
     <span id="rendererTemplates" hidden>
@@ -757,14 +783,24 @@
       </div>
       <!-- PathPlanner -->
       <div id="renderer13" class="pathplanner-workspace">
-        <div class="tab-centered">
-          <p class="pathplanner-workspace-state" role="status" data-i18n="hub.pathPlannerWorkspace.loading"></p>
-          <button
-            class="pathplanner-workspace-retry"
-            type="button"
-            data-i18n="hub.pathPlannerWorkspace.retry"
-            hidden
-          ></button>
+        <div class="pathplanner-docs-bar">
+          <button type="button" class="pathplanner-docs" data-i18n="hub.pathPlanner.documentation"></button>
+        </div>
+        <div class="pathplanner-viewport">
+          <div class="tab-centered">
+            <p class="pathplanner-workspace-state" role="status" data-i18n="hub.pathPlannerWorkspace.loading"></p>
+            <button
+              class="pathplanner-workspace-retry"
+              type="button"
+              data-i18n="hub.pathPlannerWorkspace.retry"
+              hidden
+            ></button>
+          </div>
+        </div>
+      </div>
+      <div id="renderer14">
+        <div class="documentation-container">
+          <iframe src="bearscope-docs.html" loading="lazy" data-i18n="[title]tabs.bearScopeDocumentation"></iframe>
         </div>
       </div>
     </span>

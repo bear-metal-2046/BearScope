@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-import { Distribution, DISTRIBUTION } from "./buildConstants";
+import { Distribution, DISTRIBUTION, IS_LITE } from "./buildConstants";
 
 enum TabType {
   Documentation,
@@ -21,14 +21,18 @@ enum TabType {
   Mechanism,
   Points,
   Metadata,
-  PathPlanner
+  PathPlanner,
+  BearScopeDocumentation
 }
 
 export default TabType;
 
 export function getAllTabTypes(includePathPlanner = false): TabType[] {
   return Object.values(TabType).filter(
-    (tabType) => typeof tabType === "number" && (includePathPlanner || tabType !== TabType.PathPlanner)
+    (tabType) =>
+      typeof tabType === "number" &&
+      (tabType !== TabType.BearScopeDocumentation || !IS_LITE) &&
+      (tabType !== TabType.PathPlanner || includePathPlanner)
   ) as TabType[];
 }
 
@@ -81,6 +85,8 @@ export function getDefaultTabTitle(type: TabType): string {
       return t("tabs.metadata");
     case TabType.PathPlanner:
       return "PathPlanner";
+    case TabType.BearScopeDocumentation:
+      return t("tabs.bearScopeDocumentation");
     default:
       return "";
   }
@@ -116,13 +122,15 @@ export function getTabIcon(type: TabType): string {
       return "🔍";
     case TabType.PathPlanner:
       return "🛤";
+    case TabType.BearScopeDocumentation:
+      return "📘";
     default:
       return "";
   }
 }
 
 export function getTabAccelerator(type: TabType): string {
-  if (type === TabType.Documentation) return "";
+  if (type === TabType.Documentation || type === TabType.BearScopeDocumentation) return "";
   return (
     "Alt+" +
     (() => {

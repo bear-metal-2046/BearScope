@@ -68,23 +68,24 @@ void main() async {
 
     Animate.restartOnHotReload = true;
 
+    final docked = Platform.environment.containsKey('BEARSCOPE_PROJECT_FILE');
     await windowManager.hide();
-    await windowManager.setMinimumSize(const Size(1, 1));
+    final minimumSize = docked ? const Size(1, 1) : const Size(640, 360);
+    await windowManager.setMinimumSize(minimumSize);
     await windowManager.setSize(const Size(1280, 720));
 
     WindowOptions windowOptions = WindowOptions(
-      size: const Size(1280, 720),
-      minimumSize: const Size(1, 1),
-      center: true,
-      title: 'PathPlanner',
+      center: !docked,
       titleBarStyle:
           Platform.isMacOS ? TitleBarStyle.normal : TitleBarStyle.hidden,
     );
 
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+    await windowManager.waitUntilReadyToShow(windowOptions);
+    // Setting the title bar style clears the plugin's frameless flag.
+    if (docked) await windowManager.setAsFrameless();
+    await windowManager.setTitle('PathPlanner');
+    await windowManager.show();
+    if (!docked) await windowManager.focus();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 

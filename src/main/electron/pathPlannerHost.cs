@@ -26,10 +26,15 @@ internal static class PathPlannerHost
     private const uint NoActivate = 0x0010;
     private const uint FrameChanged = 0x0020;
     private const uint Show = 0x0040;
+    private const uint AsyncPosition = 0x4000;
     private const uint CloseMessage = 0x0010;
 
     private delegate bool EnumWindowsCallback(IntPtr window, IntPtr data);
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect { public int Left, Top, Right, Bottom; }
+
+    [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr window, out Rect rect);
     [DllImport("user32.dll")] private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr window);
     [DllImport("user32.dll")] private static extern bool IsWindow(IntPtr window);
@@ -78,21 +83,31 @@ internal static class PathPlannerHost
         string[] parts = line.Split(' ');
         if (parts.Length != 5 || parts[0] != "show") return;
 
-        double scale = GetDpiForWindow(parent) / 96.0;
+        uint dpi = GetDpiForWindow(parent);
+        Rect client;
+        if (dpi == 0 || !GetClientRect(parent, out client)) return;
+        double scale = dpi / 96.0;
         int[] bounds = new int[4];
         for (int i = 0; i < bounds.Length; i++)
         {
             double value = double.Parse(parts[i + 1], CultureInfo.InvariantCulture);
             bounds[i] = (int)Math.Round(value * scale);
         }
-        string next = string.Join("/", bounds);
-        if (next == placement && IsWindowVisible(window)) return;
-        uint flags = NoActivate | Show | FrameChanged;
-        if (!SetWindowPos(window, IntPtr.Zero, bounds[0], bounds[1], bounds[2], bounds[3], flags))
+        bounds[2] = Math.Min(bounds[2], client.Right - bounds[0]);
+        bounds[3] = Math.Min(bounds[3], client.Bottom - bounds[1]);
+        if (bounds[2] <= 0 || bounds[3] <= 0)
         {
-            throw new InvalidOperationException("Could not resize the embedded PathPlanner window.");
+            if (placement != "hide") ShowWindowAsync(window, 0);
+            placement = "hide";
+            return;
         }
-        placement = next;
+        string next = string.Join("/", bounds);
+        if (next == placement) return;
+        // Queue the resize on Flutter's UI thread. Keep the last successful placement
+        // so a transient failure during a window transition is retried on the next tick.
+        uint flags = NoActivate | Show | AsyncPosition | (placement == null ? FrameChanged : 0);
+        if (SetWindowPos(window, IntPtr.Zero, bounds[0], bounds[1], bounds[2], bounds[3], flags))
+            placement = next;
     }
 
     private static int Main(string[] args)
@@ -130,10 +145,10 @@ internal static class PathPlannerHost
             Console.Out.Flush();
             string placement = null;
             string viewport = "hide";
-            while (!planner.HasExited && IsWindow(parent))
+            while (!planner.HasExited && IsWindow(parent) && IsWindow(window))
             {
                 var command = Task.Run(() => Console.ReadLine());
-                while (!command.Wait(32) && !planner.HasExited && IsWindow(parent))
+                while (!command.Wait(32) && !planner.HasExited && IsWindow(parent) && IsWindow(window))
                     ApplyViewport(parent, window, viewport, ref placement);
                 if (!command.IsCompleted || command.Result == null || command.Result == "close") break;
                 viewport = command.Result;

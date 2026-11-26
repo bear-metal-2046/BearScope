@@ -1066,6 +1066,23 @@ div.timeline-scroll-content {
   inset: 0;
 }
 
+.pathplanner-docs-bar {
+  height: 31px;
+  display: flex;
+  justify-content: flex-end;
+  padding-inline: 8px;
+}
+
+.pathplanner-docs {
+  color: inherit;
+  padding-inline: 8px;
+}
+
+.pathplanner-viewport {
+  position: absolute;
+  inset: 31px 0 0;
+}
+
 .pathplanner-workspace-retry {
   padding: 5px 10px;
   border: 1px solid currentColor;
@@ -1775,6 +1792,23 @@ div.field-2d-settings {
   flex-wrap: wrap;
 }
 
+.pathplanner-replay {
+  margin-block: 8px;
+}
+
+.pathplanner-errors {
+  width: 100%;
+}
+
+.pathplanner-events,
+.pathplanner-passes {
+  display: grid;
+  gap: 4px;
+  max-height: 150px;
+  overflow: auto;
+  margin-block: 6px;
+}
+
 .field-2d-settings .pathplanner [hidden] {
   display: none;
 }
@@ -2195,12 +2229,34 @@ div.points-settings {
 }
 
 /* Bear Metal's competition colors. Keep chart series and alliance colors semantic. */
-div.title-bar { background: #101010; border-bottom: 1px solid #4e4718; }
-div.title-bar-text { color: #ffe300; padding-inline-start: 34px; background: url("bear-metal.png") no-repeat left center / 26px 26px; }
-div.title-bar-menu button { color: #f6f4e9; }
-div.tab.tab-selected { background: #ffe300; color: #151515; border-color: #ffe300; font-weight: 650; }
+div.title-bar {
+  background: #101010;
+  border-bottom: 1px solid #4e4718;
+}
+div.title-bar-text {
+  color: #ffe300;
+  padding-inline-start: 34px;
+  background: url("bear-metal.png") no-repeat left center / 26px 26px;
+}
+div.title-bar-menu button {
+  color: #f6f4e9;
+}
+div.tab.tab-selected {
+  background: #ffe300;
+  color: #151515;
+  border-color: #ffe300;
+  font-weight: 650;
+}
 @media (prefers-color-scheme: dark) {
-  div.side-bar-background { background-color: #171717; }
-  div.viewer-background, div.controls-content { background-color: #1b1b1b; }
-  div.tab:not(.tab-selected) { background: #242424; border-color: #424242; }
+  div.side-bar-background {
+    background-color: #171717;
+  }
+  div.viewer-background,
+  div.controls-content {
+    background-color: #1b1b1b;
+  }
+  div.tab:not(.tab-selected) {
+    background: #242424;
+    border-color: #424242;
+  }
 }

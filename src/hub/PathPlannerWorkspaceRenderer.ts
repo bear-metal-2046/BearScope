@@ -12,9 +12,12 @@ export default class PathPlannerWorkspaceRenderer extends NoopRenderer {
   private failed = false;
   private readonly state: HTMLElement;
   private readonly retry: HTMLButtonElement;
+  private readonly viewport: HTMLElement;
 
-  constructor(private readonly root: HTMLElement) {
+  constructor(root: HTMLElement, showDocumentation: () => void) {
     super();
+    this.viewport = root.querySelector<HTMLElement>(".pathplanner-viewport")!;
+    root.querySelector<HTMLButtonElement>(".pathplanner-docs")!.addEventListener("click", showDocumentation);
     this.state = root.querySelector<HTMLElement>(".pathplanner-workspace-state")!;
     this.retry = root.querySelector<HTMLButtonElement>(".pathplanner-workspace-retry")!;
     this.retry.addEventListener("click", () => {
@@ -32,7 +35,7 @@ export default class PathPlannerWorkspaceRenderer extends NoopRenderer {
 
   render(): void {
     if (this.failed) return;
-    const { left, top, width, height } = this.root.getBoundingClientRect();
+    const { left, top, width, height } = this.viewport.getBoundingClientRect();
     if (width <= 0 || height <= 0) return;
     const viewport = [left, top, width, height];
     const key = `${viewport}/${window.devicePixelRatio}`;

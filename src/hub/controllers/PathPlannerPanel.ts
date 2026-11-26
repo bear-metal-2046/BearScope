@@ -21,6 +21,7 @@ import {
   movePathPlannerPoint,
   samplePathPlannerPath
 } from "../PathPlanner";
+import PathPlannerReplay from "../PathPlannerReplay";
 
 const pointKeys = ["anchor", "prevControl", "nextControl"] as const;
 
@@ -33,6 +34,7 @@ export default class PathPlannerPanel {
   private readonly status: HTMLElement;
   private readonly issues: HTMLUListElement;
   private readonly link: HTMLButtonElement;
+  private readonly replay: PathPlannerReplay;
   private paths: PathPlannerPath[] = [];
   private autos: PathPlannerAuto[] = [];
   private project?: string;
@@ -45,6 +47,7 @@ export default class PathPlannerPanel {
     private readonly getTabId: () => string
   ) {
     this.route = root.querySelector<HTMLSelectElement>(".pathplanner-route")!;
+    this.replay = new PathPlannerReplay(root.querySelector<HTMLDetailsElement>(".pathplanner-replay")!);
     this.side = root.querySelector<HTMLSelectElement>(".pathplanner-side")!;
     this.waypoint = root.querySelector<HTMLSelectElement>(".pathplanner-waypoint")!;
     this.editor = root.querySelector<HTMLElement>(".pathplanner-editor")!;
@@ -288,6 +291,7 @@ export default class PathPlannerPanel {
         }
       });
     }
-    return { objects: this.cachedOverlay.objects, handles };
+    const recorded = this.replay.update(paths, width, height, (point) => this.transformCoordinates(point));
+    return { objects: [...this.cachedOverlay.objects, ...recorded], handles };
   }
 }
