@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run BearScope with PathPlanner",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/electron/dist/electron.exe",
+      "args": ["bundles/main.js", "--pathplanner"],
+      "preLaunchTask": "Build BearScope"
+    }
+  ]
+}
