@@ -270,6 +270,10 @@ async function handleHubMessage(window: BrowserWindow, message: NamedMessage) {
       await pathPlannerProjects.choose(window, message.data, pathPlannerWorkspace.activeProject(window));
       break;
 
+    case "pathplanner-project-link-current":
+      await pathPlannerProjects.linkCurrent(window, message.data, pathPlannerWorkspace.activeProject(window));
+      break;
+
     case "pathplanner-project-unlink":
       pathPlannerProjects.close(window, message.data);
       break;

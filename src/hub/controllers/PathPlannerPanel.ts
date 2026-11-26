@@ -53,6 +53,11 @@ export default class PathPlannerPanel {
     this.issues = root.querySelector<HTMLUListElement>(".pathplanner-issues")!;
     this.link = root.querySelector<HTMLButtonElement>(".pathplanner-link")!;
     this.link.hidden = IS_LITE;
+    const currentProject = root.querySelector<HTMLButtonElement>(".pathplanner-current-project")!;
+    currentProject.hidden = IS_LITE;
+    currentProject.addEventListener("click", () => {
+      window.sendMainMessage("pathplanner-project-link-current", this.getTabId());
+    });
     this.link.addEventListener("click", () => {
       if (this.project !== undefined) this.unlinkProject();
       else window.sendMainMessage("pathplanner-project-link", this.getTabId());
@@ -102,7 +107,9 @@ export default class PathPlannerPanel {
 
   updateProject(snapshot: PathPlannerProjectSnapshot, invalid: boolean) {
     if (invalid) {
-      this.status.textContent = window.t("hub.pathPlanner.invalidProject");
+      this.status.textContent = window.t(
+        snapshot.noCurrentProject ? "hub.pathPlanner.noCurrentProject" : "hub.pathPlanner.invalidProject"
+      );
       return;
     }
     const sameProject = this.project === snapshot.folder;

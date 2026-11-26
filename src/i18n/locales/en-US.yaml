@@ -392,6 +392,8 @@ hub:
     openFiles: "Open files…"
     openFolder: "Open folder…"
     linkProject: "Link project…"
+    loadCurrentProject: "Load Current Project"
+    noCurrentProject: "Open a robot project in the PathPlanner tab first."
     unlinkProject: "Unlink project"
     linkedProject: "Watching project files"
     projectError: "Could not read the linked PathPlanner project. Unlink it and choose the folder again."

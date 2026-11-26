@@ -19,6 +19,7 @@ export type PathPlannerProjectSnapshot = {
   folder: string;
   files: { name: string; text: string }[];
   error?: boolean;
+  noCurrentProject?: boolean;
 };
 
 async function getProjectFolder(selection: string) {
@@ -61,6 +62,17 @@ export default class PathPlannerProjectLinks {
     if (window.isDestroyed()) return;
     if (folder === null) {
       this.send(window, "pathplanner-project-invalid", { id, folder: "", files: [] });
+      return;
+    }
+    this.link(window, id, folder);
+  }
+
+  async linkCurrent(window: BrowserWindow, id: unknown, activeFolder?: string) {
+    if (typeof id !== "string") return;
+    const folder = activeFolder ? await getProjectFolder(activeFolder) : null;
+    if (window.isDestroyed()) return;
+    if (folder === null) {
+      this.send(window, "pathplanner-project-invalid", { id, folder: "", files: [], noCurrentProject: true });
       return;
     }
     this.link(window, id, folder);
