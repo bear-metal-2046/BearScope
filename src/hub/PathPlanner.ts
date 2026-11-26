@@ -25,6 +25,20 @@ export type PathPlannerPath = {
 
 export type PathPlannerAuto = { name: string; paths: PathPlannerPath[] };
 
+/** Flip in blue-origin field axes, then rotate about field center and convert to renderer coordinates. */
+export function transformPathPlannerSegment(
+  [x, y]: Translation2d,
+  [width, height]: Translation2d,
+  { flipX, flipY, rotation }: { flipX: boolean; flipY: boolean; rotation: number }
+): Translation2d {
+  const dx = (x - width / 2) * (flipX ? -1 : 1);
+  const dy = (y - height / 2) * (flipY ? -1 : 1);
+  const radians = ((rotation % 360) * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  return [dy * sin - dx * cos, -dx * sin - dy * cos];
+}
+
 type FileError =
   | "readError"
   | "invalidJson"
@@ -140,7 +154,7 @@ export async function importPathPlannerFiles(files: File[]): Promise<{
           issues.push({ file: file.name, key: "missingPath", path: missing });
           continue;
         }
-        autos.set(name, { name, paths: Array.from(new Set(names), (pathName) => paths.get(pathName)!) });
+        autos.set(name, { name, paths: names.map((pathName) => paths.get(pathName)!) });
       }
     }
   }

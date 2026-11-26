@@ -113,7 +113,6 @@ export default class PathPlannerReplay {
   private chartTime: number | null | undefined;
   private chartEnabled = false;
 
-
   constructor(private readonly root: HTMLDetailsElement) {
     this.toggle = root.querySelector<HTMLInputElement>(".pathplanner-compare")!;
     this.status = root.querySelector(".pathplanner-replay-status")!;
@@ -224,7 +223,12 @@ export default class PathPlannerReplay {
     }
   }
 
-  update(paths: PathPlannerPath[], width: number, height: number, transform: (point: Translation2d) => Translation2d) {
+  update(
+    paths: PathPlannerPath[],
+    width: number,
+    height: number,
+    transform: (point: Translation2d, index: number) => Translation2d
+  ) {
     if (!this.root.open || !this.root.closest("details.pathplanner")?.hasAttribute("open")) return [];
     const now = performance.now();
     const live = window.selection.getCurrentLiveTime() !== null;
@@ -235,10 +239,11 @@ export default class PathPlannerReplay {
       this.refreshed = now;
       this.data = analyzePathPlannerReplay(window.log);
     }
-    const waypoints = paths.flatMap((path) =>
+    const waypoints = paths.flatMap((path, segment) =>
       path.document.waypoints.map(({ anchor }, index) => ({
         anchor,
-        label: path.name + " · " + (index + 1)
+        segment,
+        label: (paths.length > 1 ? segment + 1 + " · " : "") + path.name + " · " + (index + 1)
       }))
     );
     if (newPaths || this.waypointCount !== waypoints.length) {
@@ -255,8 +260,8 @@ export default class PathPlannerReplay {
       this.drawErrors(time);
     }
 
-    const waypoint = waypoints[this.waypoint.selectedIndex]?.anchor;
-    const target = waypoint ? transform([waypoint.x, waypoint.y]) : undefined;
+    const waypoint = waypoints[this.waypoint.selectedIndex];
+    const target = waypoint ? transform([waypoint.anchor.x, waypoint.anchor.y], waypoint.segment) : undefined;
     const passKey = JSON.stringify([target, width, height, this.waypoint.selectedIndex]);
     if (refresh || newPaths || passKey !== this.passKey) {
       this.passKey = passKey;

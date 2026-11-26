@@ -20,6 +20,7 @@
         <a href="#start">Get started</a>
         <a href="#edit">Edit paths and autos</a>
         <a href="#field">Load paths in 2D Field</a>
+        <a href="#manual-route">Build a manual route</a>
         <a href="#replay">Analyze a replay</a>
         <a href="#troubleshooting">Troubleshooting</a>
         <a href="#development">Run from VS Code</a>
@@ -99,6 +100,48 @@
           <p>
             The orange line shows the authored route. Choose the correct FRC field and alliance transform. Match the
             rotate or mirror option to your robot's PathPlanner configuration when reviewing a red-alliance run.
+          </p>
+        </section>
+        <section id="manual-route">
+          <h2>Build a manual comparison route</h2>
+          <p>
+            Use this when your robot code combines or transforms paths at runtime. Load the project in
+            <strong>2D Field → PathPlanner</strong> first.
+          </p>
+          <ol>
+            <li>
+              Expand <strong>Manual comparison route</strong> and click <strong>Add path segment</strong> for each path
+              the robot ran. Select the file in each row. You can add the same file more than once.
+            </li>
+            <li>
+              Use <strong>Move up</strong> to match the order in your robot code. <strong>Remove</strong> deletes a row
+              from the comparison.
+            </li>
+            <li>
+              Set the flips and rotation for each segment. <strong>Flip X</strong> reflects across the middle of the
+              field length. <strong>Flip Y</strong> reflects across the middle of the field width. Flips happen first,
+              then rotation around field center. Positive angles turn counterclockwise in blue-origin field coordinates.
+            </li>
+            <li>
+              Open <strong>Replay analysis</strong> and enable <strong>Show recorded trail and tracking error</strong>.
+              The orange segments use your manual transforms, and the cyan trail stays in the logged position. The
+              waypoint picker uses the transformed positions and labels each waypoint with its segment number.
+            </li>
+          </ol>
+          <p>
+            For example, if your code runs one path as written and then mirrors a second path lengthwise, add both in
+            order and enable <strong>Flip X</strong> on the second only. For a 180° turn about field center, enter
+            <code>180</code> with both flips off.
+          </p>
+          <p>
+            The manual route applies to the overlay and waypoint comparison. The tracking-error plots still compare
+            logged <code>currentPose</code> and <code>targetPose</code>. The manual route uses only field-center
+            transforms and draws each segment separately. It does not generate connector paths or infer timing from
+            robot code.
+          </p>
+          <p>
+            Clear <strong>Use manual comparison route</strong> to return to the standard path or auto and alliance
+            preset. Manual settings stay in this tab while it is open and do not change project files.
           </p>
         </section>
         <section id="replay">

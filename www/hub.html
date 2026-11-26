@@ -183,6 +183,38 @@
               <option value="rotate" data-i18n="hub.pathPlanner.rotate"></option>
               <option value="mirror" data-i18n="hub.pathPlanner.mirror"></option>
             </select>
+            <details class="pathplanner-comparison-route">
+              <summary data-i18n="hub.pathPlanner.comparisonRoute"></summary>
+              <label
+                ><input type="checkbox" class="pathplanner-manual-enabled" />
+                <span data-i18n="hub.pathPlanner.useComparisonRoute"></span
+              ></label>
+              <div class="pathplanner-manual-segments"></div>
+              <button
+                type="button"
+                class="pathplanner-add-segment"
+                data-i18n="hub.pathPlanner.addSegment"
+                disabled
+              ></button>
+              <template>
+                <fieldset>
+                  <legend></legend>
+                  <select data-i18n="[aria-label]hub.pathPlanner.route"></select>
+                  <label
+                    ><input type="checkbox" class="flip-x" /> <span data-i18n="hub.pathPlanner.flipX"></span
+                  ></label>
+                  <label
+                    ><input type="checkbox" class="flip-y" /> <span data-i18n="hub.pathPlanner.flipY"></span
+                  ></label>
+                  <label
+                    ><span data-i18n="hub.pathPlanner.rotationDegrees"></span>
+                    <input class="rotation" type="number" step="any" value="0"
+                  /></label>
+                  <button type="button" class="move-up" data-i18n="hub.pathPlanner.moveSegmentUp"></button>
+                  <button type="button" class="remove" data-i18n="hub.pathPlanner.removeSegment"></button>
+                </fieldset>
+              </template>
+            </details>
             <details class="pathplanner-replay">
               <summary data-i18n="hub.pathPlanner.replay"></summary>
               <label

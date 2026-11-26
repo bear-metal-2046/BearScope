@@ -19,7 +19,8 @@ import {
   PathPlannerPointKey,
   importPathPlannerFiles,
   movePathPlannerPoint,
-  samplePathPlannerPath
+  samplePathPlannerPath,
+  transformPathPlannerSegment
 } from "../PathPlanner";
 import PathPlannerReplay from "../PathPlannerReplay";
 
@@ -35,6 +36,10 @@ export default class PathPlannerPanel {
   private readonly issues: HTMLUListElement;
   private readonly link: HTMLButtonElement;
   private readonly replay: PathPlannerReplay;
+  private readonly manualEnabled: HTMLInputElement;
+  private readonly segmentList: HTMLElement;
+  private readonly addSegment: HTMLButtonElement;
+  private segments: { pathName: string; flipX: boolean; flipY: boolean; rotation: number }[] = [];
   private paths: PathPlannerPath[] = [];
   private autos: PathPlannerAuto[] = [];
   private project?: string;
@@ -48,6 +53,19 @@ export default class PathPlannerPanel {
   ) {
     this.route = root.querySelector<HTMLSelectElement>(".pathplanner-route")!;
     this.replay = new PathPlannerReplay(root.querySelector<HTMLDetailsElement>(".pathplanner-replay")!);
+    this.manualEnabled = root.querySelector(".pathplanner-manual-enabled")!;
+    this.segmentList = root.querySelector(".pathplanner-manual-segments")!;
+    this.addSegment = root.querySelector(".pathplanner-add-segment")!;
+    this.manualEnabled.addEventListener("change", () => this.updateWaypoints());
+    this.addSegment.addEventListener("click", () => {
+      const path = this.selectedPath ?? this.paths[0];
+      if (!path) return;
+      this.segments.push({ pathName: path.name, flipX: false, flipY: false, rotation: 0 });
+      this.manualEnabled.checked = true;
+      this.updateWaypoints();
+      this.renderSegments();
+      this.segmentList.lastElementChild?.querySelector("select")?.focus();
+    });
     this.side = root.querySelector<HTMLSelectElement>(".pathplanner-side")!;
     this.waypoint = root.querySelector<HTMLSelectElement>(".pathplanner-waypoint")!;
     this.editor = root.querySelector<HTMLElement>(".pathplanner-editor")!;
@@ -184,11 +202,72 @@ export default class PathPlannerPanel {
       : "";
     this.cachedOverlay = undefined;
     this.updateWaypoints();
+    this.renderSegments();
+  }
+
+  private renderSegments() {
+    this.addSegment.disabled = this.paths.length === 0;
+    const template = this.root.querySelector<HTMLTemplateElement>(".pathplanner-comparison-route template")!;
+    this.segmentList.replaceChildren(
+      ...this.segments.map((segment, index) => {
+        const row = template.content.firstElementChild!.cloneNode(true) as HTMLFieldSetElement;
+        row.querySelector("legend")!.textContent = window.t("hub.pathPlanner.segmentNumber", { number: index + 1 });
+        row.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
+          const key = element.dataset.i18n!;
+          if (key.startsWith("[aria-label]")) element.setAttribute("aria-label", window.t(key.slice(12)));
+          else element.textContent = window.t(key);
+        });
+        const select = row.querySelector("select")!;
+        select.replaceChildren(...this.paths.map(({ name }) => new Option(name, name)));
+        if (!this.paths.some(({ name }) => name === segment.pathName)) {
+          const missing = new Option(
+            window.t("hub.pathPlanner.segmentMissing", { name: segment.pathName }),
+            segment.pathName
+          );
+          missing.disabled = true;
+          select.add(missing);
+        }
+        select.value = segment.pathName;
+        select.onchange = () => {
+          segment.pathName = select.value;
+        };
+        for (const [selector, axis] of [
+          [".flip-x", "flipX"],
+          [".flip-y", "flipY"]
+        ] as const) {
+          const input = row.querySelector<HTMLInputElement>(selector)!;
+          input.checked = segment[axis];
+          input.onchange = () => {
+            segment[axis] = input.checked;
+          };
+        }
+        const rotation = row.querySelector<HTMLInputElement>(".rotation")!;
+        rotation.value = String(segment.rotation);
+        rotation.oninput = () => {
+          segment.rotation = Number.isFinite(rotation.valueAsNumber) ? rotation.valueAsNumber : 0;
+        };
+        const up = row.querySelector<HTMLButtonElement>(".move-up")!;
+        up.disabled = index === 0;
+        up.onclick = () => {
+          this.segments.splice(index, 1);
+          this.segments.splice(index - 1, 0, segment);
+          this.renderSegments();
+          (this.segmentList.children[index - 1] as HTMLElement).querySelector("select")?.focus();
+        };
+        row.querySelector<HTMLButtonElement>(".remove")!.onclick = () => {
+          this.segments.splice(index, 1);
+          this.renderSegments();
+          this.addSegment.focus();
+        };
+        return row;
+      })
+    );
   }
 
   private updateWaypoints() {
     const path = this.selectedPath;
-    this.editor.hidden = path === undefined || this.project !== undefined;
+    this.editor.hidden = path === undefined || this.project !== undefined || this.manualEnabled.checked;
+    this.side.disabled = this.route.disabled || this.manualEnabled.checked;
     this.waypoint.replaceChildren();
     if (path === undefined) return;
     path.document.waypoints.forEach((_, index) => {
@@ -243,7 +322,8 @@ export default class PathPlannerPanel {
   }
 
   handleDrag(handle: Field2dPathPlannerHandle, position?: Translation2d) {
-    if (!this.root.open || this.selectedPath === undefined || this.project !== undefined) return;
+    if (!this.root.open || this.selectedPath === undefined || this.project !== undefined || this.manualEnabled.checked)
+      return;
     this.waypoint.selectedIndex = handle.index;
     if (position === undefined) {
       this.updatePointInputs();
@@ -257,24 +337,46 @@ export default class PathPlannerPanel {
     this.fieldSize = [width, height];
     const selectedPath = this.selectedPath;
     const selectedAuto = this.autos[this.route.selectedIndex - this.paths.length - 1];
-    const paths = selectedPath === undefined ? selectedAuto?.paths ?? [] : [selectedPath];
-    const key = `${this.route.selectedIndex}/${this.side.value}/${width}/${height}`;
+    const manual = this.manualEnabled.checked;
+    const segments = manual
+      ? this.segments.flatMap((segment) => {
+          const path = this.paths.find(({ name }) => name === segment.pathName);
+          return path ? [{ ...segment, path }] : [];
+        })
+      : [];
+    const paths = manual
+      ? segments.map(({ path }) => path)
+      : selectedPath === undefined
+      ? selectedAuto?.paths ?? []
+      : [selectedPath];
+    const transform = (point: Translation2d, index: number): Translation2d => {
+      const segment = segments[index];
+      return segment ? transformPathPlannerSegment(point, [width, height], segment) : this.transformCoordinates(point);
+    };
+    const key = JSON.stringify([
+      this.route.selectedIndex,
+      this.side.value,
+      width,
+      height,
+      manual,
+      manual ? this.segments : null
+    ]);
     if (this.cachedOverlay?.key !== key) {
       this.cachedOverlay = {
         key,
-        objects: paths.map((path) => ({
+        objects: paths.map((path, index) => ({
           type: "trajectory",
           color: "#ff8c00",
           size: "normal",
           poses: samplePathPlannerPath(path).map((translation) => ({
-            pose: { translation: this.transformCoordinates(translation), rotation: 0 },
+            pose: { translation: transform(translation, index), rotation: 0 },
             annotation: { is2DSource: true }
           }))
         }))
       };
     }
     const handles: Field2dPathPlannerHandle[] = [];
-    if (selectedPath !== undefined && this.root.open && this.project === undefined) {
+    if (!manual && selectedPath !== undefined && this.root.open && this.project === undefined) {
       selectedPath.document.waypoints.forEach((waypoint, index) => {
         const selected = this.waypoint.selectedIndex === index;
         for (const point of selected ? pointKeys : (["anchor"] as const)) {
@@ -291,7 +393,7 @@ export default class PathPlannerPanel {
         }
       });
     }
-    const recorded = this.replay.update(paths, width, height, (point) => this.transformCoordinates(point));
+    const recorded = this.replay.update(paths, width, height, transform);
     return { objects: [...this.cachedOverlay.objects, ...recorded], handles };
   }
 }

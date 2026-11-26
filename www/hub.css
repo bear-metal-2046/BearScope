@@ -1792,8 +1792,16 @@ div.field-2d-settings {
   flex-wrap: wrap;
 }
 
-.pathplanner-replay {
+.pathplanner-replay,
+.pathplanner-comparison-route {
   margin-block: 8px;
+}
+
+.pathplanner-manual-segments fieldset {
+  min-inline-size: 0;
+  display: grid;
+  gap: 4px;
+  margin-block: 6px;
 }
 
 .pathplanner-errors {
@@ -1819,6 +1827,10 @@ div.field-2d-settings {
   width: 0;
   min-width: 0;
   margin: 0;
+}
+
+.field-2d-settings .pathplanner input.rotation {
+  width: 6em;
 }
 
 .pathplanner input:focus-visible {
