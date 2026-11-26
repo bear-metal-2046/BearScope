@@ -20,7 +20,7 @@ function isViewport(value: unknown): value is [number, number, number, number] {
 }
 
 export default class PathPlannerWorkspace {
-  private session: { window: BrowserWindow; end: () => void; setViewport: (command: string) => void } | undefined;
+  private session: { window: BrowserWindow; projectFile: string; end: () => void; setViewport: (command: string) => void } | undefined;
 
   constructor(private readonly sendMessage: (window: BrowserWindow, name: string, data: string) => void) {}
 
@@ -59,9 +59,20 @@ export default class PathPlannerWorkspace {
     this.session?.setViewport(`show ${left} ${top} ${right - left} ${bottom - top}`);
   }
 
+  activeProject(window: BrowserWindow): string | undefined {
+    if (this.session?.window !== window) return;
+    try {
+      const folder = JSON.parse(fs.readFileSync(this.session.projectFile, "utf8"));
+      if (typeof folder === "string" && path.isAbsolute(folder)) return folder;
+    } catch {}
+  }
+
   private start(window: BrowserWindow) {
     const handle = window.getNativeWindowHandle().readBigUInt64LE().toString();
-    const process = spawn(runner, [handle, planner], { windowsHide: true, stdio: "pipe" });
+    const sessionDir = fs.mkdtempSync(path.join(app.getPath("temp"), "bearscope-planner-"));
+    const projectFile = path.join(sessionDir, "project.json");
+    const env = { ...global.process.env, BEARSCOPE_PROJECT_FILE: projectFile };
+    const process = spawn(runner, [handle, planner], { windowsHide: true, stdio: "pipe", env });
     let ready = false;
     let closed = false;
     let lastCommand: string | undefined;
@@ -82,7 +93,7 @@ export default class PathPlannerWorkspace {
       timeout.unref();
       process.once("close", () => clearTimeout(timeout));
     };
-    const session = { window, end, setViewport };
+    const session = { window, projectFile, end, setViewport };
     this.session = session;
     window.once("closed", end);
     this.sendMessage(window, "pathplanner-workspace-state", "loading");
@@ -97,6 +108,7 @@ export default class PathPlannerWorkspace {
     process.stdin.on("error", () => {});
     process.on("error", (error) => (launchError += error.message));
     process.once("close", (code) => {
+      fs.rm(sessionDir, { recursive: true, force: true }, () => {});
       lines.close();
       window.removeListener("closed", end);
       if (this.session === session) this.session = undefined;

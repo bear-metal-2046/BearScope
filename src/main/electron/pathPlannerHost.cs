@@ -18,8 +18,9 @@ using System.Threading.Tasks;
 internal static class PathPlannerHost
 {
     private const int WindowStyle = -16;
-    private const int Owner = -8;
-    private const int Popup = unchecked((int)0x80000000);
+    private const int Child = 0x40000000;
+    private const int ExtendedStyle = -20;
+    private const int Layered = 0x80000;
     private const int ClipSiblings = 0x04000000;
     private const int PopupAndFrame = unchecked((int)0x80cf0000);
     private const uint NoActivate = 0x0010;
@@ -39,9 +40,8 @@ internal static class PathPlannerHost
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder name, int size);
     [DllImport("user32.dll", SetLastError = true)] private static extern int GetWindowLong(IntPtr window, int index);
     [DllImport("user32.dll", SetLastError = true)] private static extern int SetWindowLong(IntPtr window, int index, int value);
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)] private static extern IntPtr SetOwner(IntPtr window, int index, IntPtr owner);
-    [StructLayout(LayoutKind.Sequential)] private struct Point { public int X, Y; }
-    [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr window, ref Point point);
+    [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetParent(IntPtr window, IntPtr parent);
+    [DllImport("user32.dll", SetLastError = true)] private static extern bool SetLayeredWindowAttributes(IntPtr window, uint key, byte opacity, uint flags);
     [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr window);
     [DllImport("user32.dll")] private static extern IntPtr GetParent(IntPtr window);
     [DllImport("user32.dll")] private static extern bool ShowWindowAsync(IntPtr window, int command);
@@ -85,12 +85,10 @@ internal static class PathPlannerHost
             double value = double.Parse(parts[i + 1], CultureInfo.InvariantCulture);
             bounds[i] = (int)Math.Round(value * scale);
         }
-        var origin = new Point { X = bounds[0], Y = bounds[1] };
-        if (!ClientToScreen(parent, ref origin)) return;
-        string next = origin.X + "/" + origin.Y + "/" + bounds[2] + "/" + bounds[3];
+        string next = string.Join("/", bounds);
         if (next == placement && IsWindowVisible(window)) return;
         uint flags = NoActivate | Show | FrameChanged;
-        if (!SetWindowPos(window, IntPtr.Zero, origin.X, origin.Y, bounds[2], bounds[3], flags))
+        if (!SetWindowPos(window, IntPtr.Zero, bounds[0], bounds[1], bounds[2], bounds[3], flags))
         {
             throw new InvalidOperationException("Could not resize the embedded PathPlanner window.");
         }
@@ -120,12 +118,13 @@ internal static class PathPlannerHost
                 if (window == IntPtr.Zero) Thread.Sleep(35);
             }
             if (window == IntPtr.Zero) throw new InvalidOperationException("PathPlanner did not open its editor window.");
-            // Chromium composites over foreign child windows. An owned popup stays above
-            // the hub while following its client area and minimizing with its owner.
+            // A layered child participates in Windows composition above Chromium's GPU surface.
             int style = GetWindowLong(window, WindowStyle);
-            SetWindowLong(window, WindowStyle, (style & ~PopupAndFrame) | Popup | ClipSiblings);
-            SetOwner(window, Owner, parent);
-            if (GetParent(window) != parent) throw new InvalidOperationException("Could not attach PathPlanner to AdvantageScope.");
+            SetWindowLong(window, WindowStyle, (style & ~PopupAndFrame) | Child | ClipSiblings);
+            SetWindowLong(window, ExtendedStyle, GetWindowLong(window, ExtendedStyle) | Layered);
+            if (!SetLayeredWindowAttributes(window, 0, 255, 2)) throw new InvalidOperationException("Could not compose the editor.");
+            SetParent(window, parent);
+            if (GetParent(window) != parent) throw new InvalidOperationException("Could not dock the editor.");
 
             Console.WriteLine("ready");
             Console.Out.Flush();

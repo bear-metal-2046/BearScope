@@ -267,7 +267,7 @@ async function handleHubMessage(window: BrowserWindow, message: NamedMessage) {
       break;
 
     case "pathplanner-project-link":
-      await pathPlannerProjects.choose(window, message.data);
+      await pathPlannerProjects.choose(window, message.data, pathPlannerWorkspace.activeProject(window));
       break;
 
     case "pathplanner-project-unlink":
@@ -2954,12 +2954,13 @@ function createHubWindow(state?: WindowState, layoutOverride?: any) {
   createPorts(); // Create ports immediately so messages can be queued
   window.webContents.on("dom-ready", () => {
     if (!firstLoad) {
+      pathPlannerWorkspace.close(window);
       createPorts(); // Create ports on reload
       rlogSockets[window.id]?.destroy(); // Destroy any existing RLOG sockets
     }
 
     // Launch dev tools
-    if (firstLoad && !app.isPackaged) {
+    if (firstLoad && !app.isPackaged && !process.argv.includes("--pathplanner")) {
       window.webContents.openDevTools();
     }
 
@@ -3951,6 +3952,8 @@ function getLocale(prefs: Preferences | null = null): string {
 }
 let lang = getLocale();
 app.commandLine.appendSwitch("lang", lang);
+// Keep native child surfaces composited in z-order with Chromium on Windows.
+if (process.platform === "win32") app.commandLine.appendSwitch("disable-direct-composition");
 ipcMain.on("get-locale", (event) => {
   event.returnValue = lang;
 });
@@ -3966,7 +3969,7 @@ if (process.platform === "linux") {
   if (DISTRIBUTION === Distribution.WPILib) {
     app.setName("AdvantageScope (WPILib)");
   } else {
-    app.setName("AdvantageScope PathPlanner");
+    app.setName("BearScope");
   }
 }
 

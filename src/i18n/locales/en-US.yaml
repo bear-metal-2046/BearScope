@@ -308,7 +308,7 @@ licenses:
   title: "Licenses — AdvantageScope" # Window title for licenses page
 
 hub:
-  title: "AdvantageScope PathPlanner" # Main application window title
+  title: "BearScope · Bear Metal 2046" # Main application window title
   titleLite: "AdvantageScope Lite" # Main application window title for AdvantageScope Lite
   titleLiteDs: "AdvantageScope Lite (DS)" # Main application window title for AdvantageScope Lite (Driver Station)
   titleWithName: "{{name}} — {{app}}" # Window title format with log/source name

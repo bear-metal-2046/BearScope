@@ -119,3 +119,10 @@ button:not(:disabled):active {
 canvas {
   direction: ltr;
 }
+
+:root { accent-color: #dfbd00; }
+:focus-visible:not(input) { outline-color: #b59c00; }
+@media (prefers-color-scheme: dark) {
+  a { color: #ffe300; }
+  :focus-visible:not(input) { outline-color: #ffe300; }
+}

@@ -25,12 +25,20 @@ AdvantageScope includes the following tools:
 
 Feedback, feature requests, and bug reports are welcome on the [issues page](https://github.com/Mechanical-Advantage/AdvantageScope/issues). See the [contribution page](CONTRIBUTING.md) for more information on contributing to AdvantageScope. For non-public inquiries, please send a message to software@team6328.org.
 
-## PathPlanner fork
+## BearScope for Bear Metal 2046
 
-The Windows build runs the full AdvantageScope desktop app and bundles PathPlanner 2026.1.2. Open **Tabs → New Tab → PathPlanner** to use the upstream workspace inside the desktop window. Open **2D Field → PathPlanner → Link project…** to follow changes to the same robot project's saved paths and autos while viewing a log or live telemetry.
+Open **Tabs → New Tab → PathPlanner** on Windows to edit paths, autos, events and constraints in the full PathPlanner workspace. Use its drawer to switch projects or open the navigation grid and telemetry tools. **2D Field → PathPlanner → Link project…** follows the active editor project and reloads saved paths and autos alongside your log. With no active project, it opens a folder picker.
 
-For quick edits in the 2D Field tab, import a `.path` file, drag its waypoints and handles, and export a copy. See the [2D Field guide](docs/docs/tab-reference/2d-field.md#pathplanner) for the complete workflow.
+The Windows build uses the PathPlanner 2026.1.2 runtime and a team build of the Flutter editor. The editor source and MIT license are in [pathplanner](pathplanner). The bear logo comes from the [Bear Metal organization](https://github.com/bear-metal-2046).
 
-On Windows, `npm run pathplanner:prepare` verifies the upstream release archive and builds the native host. The normal desktop build scripts run this step automatically. The bundled PathPlanner release is distributed with its [MIT license](PATHPLANNER-LICENSE).
+Press **F5** in VS Code to compile and launch. The included Windows editor module lets you work on the Electron app without installing Flutter. To change the Dart editor itself, use Flutter 3.35.7 and run the following in PowerShell from the repository root with the app closed.
 
+```powershell
+cd pathplanner
+flutter pub get --enforce-lockfile
+flutter assemble --output=build/bearscope '-dTargetPlatform=windows-x64' '-dBuildMode=release' '-dTargetFile=lib/main.dart' release_bundle_windows-x64_assets
+Copy-Item build/bearscope/windows/app.so prebuilt/app.so -Force
+cd ..
+npm.cmd run pathplanner:prepare
+```
 ![Example screenshot](/docs/static/img/screenshot-light.webp)

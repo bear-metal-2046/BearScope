@@ -39,6 +39,8 @@ if (!fs.existsSync(plannerExe) || !fs.existsSync(versionStamp) || fs.readFileSyn
 }
 
 fs.copyFileSync(path.join(root, "PATHPLANNER-LICENSE"), path.join(bundle, "LICENSE.txt"));
+fs.copyFileSync(path.join(root, "pathplanner", "prebuilt", "app.so"), path.join(bundle, "data", "app.so"));
+fs.copyFileSync(path.join(root, "www", "bear-metal.png"), path.join(bundle, "data", "flutter_assets", "images", "icon.png"));
 const compiler = path.join(
   process.env.SystemRoot ?? "C:\\Windows",
   "Microsoft.NET",

@@ -46,8 +46,12 @@ export default class PathPlannerProjectLinks {
     this.links.get(`${window.id}:${id}`)?.();
   }
 
-  async choose(window: BrowserWindow, id: unknown) {
+  async choose(window: BrowserWindow, id: unknown, activeFolder?: string) {
     if (typeof id !== "string") return;
+    if (activeFolder && await getProjectFolder(activeFolder)) {
+      if (!window.isDestroyed()) this.link(window, id, activeFolder);
+      return;
+    }
     const selection = await dialog.showOpenDialog(window, {
       title: t("hub.pathPlanner.linkProject"),
       properties: ["openDirectory"]

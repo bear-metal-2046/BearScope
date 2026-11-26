@@ -102,3 +102,7 @@ button:not(:disabled):active {
     background-color: #0e37b3;
   }
 }
+
+body h2 { color: #9d8000; }
+body button, body button:not(:disabled):hover { color: #141414; background: #ffe300; }
+@media (prefers-color-scheme: dark) { body h2 { color: #ffe300; } }
