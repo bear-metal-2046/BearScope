@@ -249,6 +249,35 @@
             Emit one terminal state per run. Existing tinylog messages can be read in Console. The command timeline
             reads the structured fields above.
           </p>
+          <h3>Robot-side Java examples</h3>
+          <p>
+            In your auto builder, collect the final trajectory states in execution order as you build the commands. In
+            Bear Metal's 2026 code, <code>Chassis.pathCommand</code> collects mirrored segment states, and
+            <code>Autonomous.logSelectedPath</code> applies the alliance transform and records the array. The shape of
+            the command tree can change each season. Keep the logged key and type stable.
+          </p>
+          <pre><code>// assembledPoses contains the final blue-origin poses, in run order.
+Logger.recordOutput("Auto/SelectedPath", assembledPoses.toArray(Pose2d[]::new));
+Logger.recordOutput("Chassis/OdometryPose", estimatedPose);
+
+// Wire these callbacks once to the PathPlanner follower.
+PathPlannerLogging.setLogCurrentPoseCallback(
+    pose -&gt; Logger.recordOutput("PathPlanner/currentPose", pose));
+PathPlannerLogging.setLogTargetPoseCallback(
+    pose -&gt; Logger.recordOutput("PathPlanner/targetPose", pose));
+
+// Record the requested action and its current checks each robot loop.
+Logger.recordOutput("BearScope/Actions/FeedRequested", feedRequested);
+Logger.recordOutput("Shooter/Is At Target Speed", flywheelReady);
+Logger.recordOutput("Chassis/Is At Shooting Angle", chassisAimed);</code></pre>
+          <p>
+            For scheduler events, keep a map from the active command object to a unique instance ID. On initialize,
+            assign an ID and log the start. On finish or interrupt, log the terminal state to the same key and remove
+            the ID. Use a JSON serializer so command names with quotes are escaped.
+          </p>
+          <pre><code>// gson is a JSON serializer. Use an empty string when there is no interrupter.
+Logger.recordOutput("BearScope/Commands/" + instanceId,
+    gson.toJson(Map.of("name", command.getName(), "state", state, "by", interruptedBy)));</code></pre>
         </section>
         <section id="ai-review">
           <h2>AI log review</h2>
