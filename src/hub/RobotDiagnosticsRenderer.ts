@@ -5,6 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
+import type { AdvantageScopeAssets } from "../shared/AdvantageScopeAssets";
 import type Log from "../shared/log/Log";
 import { NoopRenderer } from "../shared/renderers/TabRenderer";
 import { defaultDiagnostics, diagnose, parsePreset, type DiagnosticRow } from "./RobotDiagnostics";
@@ -12,14 +13,23 @@ import { defaultDiagnostics, diagnose, parsePreset, type DiagnosticRow } from ".
 export default class RobotDiagnosticsRenderer extends NoopRenderer {
   private preset = defaultDiagnostics;
   private readonly source: HTMLSelectElement;
+  private readonly field: HTMLSelectElement;
+  private readonly fieldImage = new Image();
+  private assets?: AdvantageScopeAssets | null;
   private evaluatedLog?: Log;
   private previous?: ReturnType<typeof diagnose>;
   private time?: number;
   private updated = -Infinity;
 
-  constructor(private readonly root: HTMLElement) {
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly tabId: () => string
+  ) {
     super();
     this.source = root.querySelector(".diagnostics-log")!;
+    this.field = root.querySelector(".diagnostics-field")!;
+    this.field.onchange = () => this.drawPoses(this.previous?.fieldPoses ?? []);
+    this.fieldImage.onload = () => this.drawPoses(this.previous?.fieldPoses ?? []);
     const editor = root.querySelector<HTMLTextAreaElement>(".diagnostics-preset")!;
     const status = root.querySelector<HTMLElement>(".diagnostics-status")!;
     const showPreset = () => {
@@ -44,6 +54,47 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
       this.previous = undefined;
     });
     showPreset();
+
+    const prompt = root.querySelector<HTMLTextAreaElement>(".diagnostics-prompt")!;
+    root.querySelector(".diagnostics-generate")!.addEventListener("click", () => {
+      if (!this.previous) return;
+      const { readiness, context, incidents, modules, vision, commands } = this.previous;
+      const sections = [
+        "Review this robot log summary for inconsistent readings and suspicious timing. Cite timestamps and suggest what to check in the original log.",
+        "Preset: " + this.preset.name + " · cursor: " + this.time?.toFixed(2) + " s",
+        ...Object.entries({ readiness, context, incidents, modules, vision, commands: commands.slice(-40) }).map(
+          ([name, rows]) => name + "\n" + rows.map((row) => JSON.stringify(row)).join("\n")
+        )
+      ];
+      prompt.value = sections.join("\n\n").slice(0, 16000);
+    });
+    root.querySelector(".diagnostics-copy")!.addEventListener("click", async () => {
+      if (!prompt.value.trim()) {
+        this.showAnalysis("Prepare a summary first.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(prompt.value);
+        this.showAnalysis("Copied. Paste the summary into your preferred chat.");
+      } catch {
+        prompt.select();
+        this.showAnalysis("Select and copy the summary with Ctrl+C.");
+      }
+    });
+    root.querySelector(".diagnostics-send")!.addEventListener("click", () => {
+      if (!prompt.value.trim()) {
+        this.showAnalysis("Prepare a summary first.");
+        return;
+      }
+      this.showAnalysis("Waiting for Claude…");
+      root.querySelector<HTMLButtonElement>(".diagnostics-send")!.disabled = true;
+      window.sendMainMessage("bearscope-analyze-diagnostics", { id: this.tabId(), prompt: prompt.value });
+    });
+  }
+
+  showAnalysis(result: string) {
+    this.root.querySelector<HTMLTextAreaElement>(".diagnostics-answer")!.value = result;
+    this.root.querySelector<HTMLButtonElement>(".diagnostics-send")!.disabled = false;
   }
 
   override saveState() {
@@ -99,9 +150,31 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
     const scale = Math.min((width - 40) / spanX, (height - 40) / spanY);
     ctx.fillStyle = "#191919";
     ctx.fillRect(0, 0, width, height);
-    poses.forEach(({ label, x, y }, index) => {
-      const px = 12 + (x - minX) * scale;
-      const py = height - 16 - (y - minY) * scale;
+    const field = this.assets?.field2ds.find(({ id }) => id === this.field.value);
+    if (field && this.fieldImage.getAttribute("src") !== field.path) this.fieldImage.src = field.path;
+    const fieldWidth = (field?.widthInches ?? 0) * 0.0254;
+    const fieldHeight = (field?.heightInches ?? 0) * 0.0254;
+    const fieldScale = fieldWidth > 0 && fieldHeight > 0 ? Math.min(width / fieldWidth, height / fieldHeight) : 0;
+    const offsetX = (width - fieldWidth * fieldScale) / 2;
+    const offsetY = (height - fieldHeight * fieldScale) / 2;
+    if (field && fieldScale && this.fieldImage.complete && this.fieldImage.naturalWidth) {
+      const [left, top] = field.topLeft;
+      const [right, bottom] = field.bottomRight;
+      ctx.drawImage(
+        this.fieldImage,
+        left,
+        top,
+        right - left,
+        bottom - top,
+        offsetX,
+        offsetY,
+        fieldWidth * fieldScale,
+        fieldHeight * fieldScale
+      );
+    }
+    poses.forEach(({ x, y }, index) => {
+      const px = fieldScale ? offsetX + x * fieldScale : 12 + (x - minX) * scale;
+      const py = fieldScale ? offsetY + (fieldHeight - y) * fieldScale : height - 16 - (y - minY) * scale;
       ctx.fillStyle = index === 0 ? "#ffe300" : "#56dfff";
       ctx.beginPath();
       ctx.arc(px, py, 4, 0, Math.PI * 2);
@@ -128,6 +201,14 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
   }
 
   override render() {
+    if (this.assets !== window.assets) {
+      this.assets = window.assets;
+      const value = this.field.value;
+      const fields = this.assets?.field2ds.filter((field) => !field.isFTC) ?? [];
+      this.field.replaceChildren(new Option("Auto-zoom", ""), ...fields.map(({ id, name }) => new Option(name, id)));
+      if (fields.some(({ id }) => id === value)) this.field.value = value;
+      this.drawPoses(this.previous?.fieldPoses ?? []);
+    }
     const log = window.log;
     const time = window.selection.getRenderTime() ?? log.getTimestampRange()[1];
     const now = performance.now();

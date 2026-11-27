@@ -856,6 +856,16 @@
           <button class="diagnostics-reset" type="button">Reset to Bear Metal 2026</button>
           <p class="diagnostics-status" role="status"></p>
         </details>
+        <details class="diagnostics-ai">
+          <summary>AI log review</summary>
+          <button type="button" class="diagnostics-generate">Prepare summary</button>
+          <label
+            >Summary to share <textarea class="diagnostics-prompt" maxlength="16000" spellcheck="false"></textarea>
+          </label>
+          <button type="button" class="diagnostics-copy">Copy for ChatGPT or Claude</button>
+          <button type="button" class="diagnostics-send">Send to Claude</button>
+          <textarea class="diagnostics-answer" readonly aria-label="AI analysis result"></textarea>
+        </details>
         <div class="diagnostics-grid">
           <section>
             <h2>Action readiness</h2>
@@ -863,6 +873,12 @@
           </section>
           <section>
             <h2>Vision</h2>
+            <label
+              >Field
+              <select class="diagnostics-field">
+                <option value="">Auto-zoom</option>
+              </select></label
+            >
             <canvas
               class="diagnostics-poses"
               width="420"

@@ -581,6 +581,9 @@ setInterval(() => {
 
 async function handleMainMessage(message: NamedMessage) {
   switch (message.name) {
+    case "bearscope-analysis-result":
+      window.tabs.showDiagnosticAnalysis(message.data);
+      break;
     case "pathplanner-workspace-state":
       window.tabs.setPathPlannerWorkspaceState(message.data);
       break;

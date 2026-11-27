@@ -607,7 +607,7 @@ export default class Tabs {
             return true;
           }
         })();
-        renderer = new RobotDiagnosticsRenderer(rendererElement);
+        renderer = new RobotDiagnosticsRenderer(rendererElement, () => controller.UUID);
         break;
       default:
         controller = new NoopController();
@@ -669,6 +669,11 @@ export default class Tabs {
   updatePathPlannerProject(snapshot: PathPlannerProjectSnapshot, invalid: boolean) {
     const controller = this.tabList.find((tab) => tab.controller.UUID === snapshot.id)?.controller;
     if (controller instanceof Field2dController) controller.updatePathPlannerProject(snapshot, invalid);
+  }
+
+  showDiagnosticAnalysis(data: { id: string; result: string }) {
+    const tab = this.tabList.find((tab) => tab.controller.UUID === data.id);
+    if (tab?.renderer instanceof RobotDiagnosticsRenderer) tab.renderer.showAnalysis(data.result);
   }
 
   /** Closes the specified tab. */

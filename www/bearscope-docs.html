@@ -23,6 +23,7 @@
         <a href="#manual-route">Build a manual route</a>
         <a href="#replay">Analyze a replay</a>
         <a href="#diagnostics">Robot diagnostics</a>
+        <a href="#ai-review">AI log review</a>
         <a href="#troubleshooting">Troubleshooting</a>
         <a href="#development">Run from VS Code</a>
       </nav>
@@ -213,6 +214,10 @@
           </p>
           <h3>Vision</h3>
           <p>
+            Pick an FRC field in the Vision card to place the estimates on the game field, or use Auto-zoom to compare
+            nearby estimates.
+          </p>
+          <p>
             The pose plot compares blue-origin odometry and camera estimates at the cursor. It auto-zooms around those
             poses. Each camera can publish <code>Vision/&lt;camera&gt;/MegaTag1/Position</code> and
             <code>MegaTag2/Position</code> as <code>Pose2d</code>, plus <code>IDs Seen</code>,
@@ -243,6 +248,34 @@
           <p>
             Emit one terminal state per run. Existing tinylog messages can be read in Console. The command timeline
             reads the structured fields above.
+          </p>
+        </section>
+        <section id="ai-review">
+          <h2>AI log review</h2>
+          <ol>
+            <li>
+              In <strong>Robot Diagnostics</strong>, choose a log source and scrub to the moment you want to
+              investigate.
+            </li>
+            <li>
+              Expand <strong>AI log review</strong> and click <strong>Prepare summary</strong>. Review the editable
+              preview. It includes cursor values, peak incidents, and up to 40 recent command entries. The raw log file
+              is never attached.
+            </li>
+            <li>
+              Use <strong>Copy for ChatGPT or Claude</strong> to paste it into your own chat, or use
+              <strong>Send to Claude</strong> to see the reply in BearScope. BearScope asks before sending each API
+              request.
+            </li>
+          </ol>
+          <p>
+            For in-app review, launch BearScope with <code>ANTHROPIC_API_KEY</code> and
+            <code>BEARSCOPE_CLAUDE_MODEL</code> in its environment. Use a model ID available to your Anthropic account.
+            Keep the key out of source files, presets, and VS Code launch configuration. Requests may incur API charges.
+          </p>
+          <p>
+            Check any suggested explanation against the indicated timestamps in the original log. The summary is a
+            sample of your telemetry.
           </p>
         </section>
         <section id="troubleshooting">
