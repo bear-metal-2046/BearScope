@@ -2272,3 +2272,71 @@ div.tab.tab-selected {
     border-color: #424242;
   }
 }
+
+.robot-diagnostics {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 16px;
+}
+
+.robot-diagnostics header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.robot-diagnostics h1,
+.robot-diagnostics h2 {
+  margin: 0 0 8px;
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  margin-block: 12px;
+}
+
+.diagnostics-grid section {
+  min-width: 0;
+  border: 1px solid #8887;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.robot-diagnostics button {
+  color: inherit;
+  border: 1px solid #8888;
+  padding: 4px 8px;
+  text-align: start;
+}
+
+.diagnostics-grid section button {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.robot-diagnostics textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 135px;
+}
+
+.diagnostics-poses {
+  max-width: 100%;
+}
+
+.diagnostics-span {
+  display: block;
+  min-height: 5px;
+  background: #b39100;
+}
+
+.diagnostics-span.interrupted {
+  background: #d44747;
+}

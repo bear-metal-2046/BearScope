@@ -607,6 +607,7 @@
       <!-- PathPlanner -->
       <div id="controller13"></div>
       <div id="controller14"></div>
+      <div id="controller15"></div>
     </span>
 
     <span id="rendererTemplates" hidden>
@@ -838,6 +839,46 @@
       <div id="renderer14">
         <div class="documentation-container">
           <iframe src="bearscope-docs.html" loading="lazy" data-i18n="[title]tabs.bearScopeDocumentation"></iframe>
+        </div>
+      </div>
+      <div id="renderer15" class="robot-diagnostics">
+        <header>
+          <h1>Robot Diagnostics</h1>
+          <label
+            >Log source
+            <select class="diagnostics-log"></select
+          ></label>
+        </header>
+        <details>
+          <summary>Telemetry preset</summary>
+          <label>Preset JSON <textarea class="diagnostics-preset" spellcheck="false"></textarea></label>
+          <button class="diagnostics-apply" type="button">Apply preset</button>
+          <button class="diagnostics-reset" type="button">Reset to Bear Metal 2026</button>
+          <p class="diagnostics-status" role="status"></p>
+        </details>
+        <div class="diagnostics-grid">
+          <section>
+            <h2>Action readiness</h2>
+            <div class="diagnostics-readiness"></div>
+          </section>
+          <section>
+            <h2>Vision</h2>
+            <canvas
+              class="diagnostics-poses"
+              width="420"
+              height="190"
+              aria-label="Camera estimates and odometry"
+            ></canvas>
+            <div class="diagnostics-vision"></div>
+          </section>
+          <section>
+            <h2>Swerve and power</h2>
+            <div class="diagnostics-incidents"></div>
+          </section>
+          <section>
+            <h2>Command timeline</h2>
+            <div class="diagnostics-commands"></div>
+          </section>
         </div>
       </div>
     </span>

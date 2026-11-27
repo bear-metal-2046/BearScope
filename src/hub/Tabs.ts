@@ -28,6 +28,7 @@ import VideoRenderer from "../shared/renderers/VideoRenderer";
 import { Units } from "../shared/units";
 import { clampValue } from "../shared/util";
 import PathPlannerWorkspaceRenderer from "./PathPlannerWorkspaceRenderer";
+import RobotDiagnosticsRenderer from "./RobotDiagnosticsRenderer";
 import ScrollSensor, { ScrollSensorMouseControl } from "./ScrollSensor";
 import Timeline from "./Timeline";
 import ConsoleController from "./controllers/ConsoleController";
@@ -101,6 +102,7 @@ export default class Tabs {
     this.FIXED_CONTROL_HEIGHTS.set(TabType.Metadata, 0);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.PathPlanner, 0);
     this.FIXED_CONTROL_HEIGHTS.set(TabType.BearScopeDocumentation, 0);
+    this.FIXED_CONTROL_HEIGHTS.set(TabType.RobotDiagnostics, 0);
 
     // Hover and click handling
     let mouseDownInfo: [number, number] | null = null;
@@ -599,6 +601,14 @@ export default class Tabs {
         controller = new NoopController();
         renderer = new PathPlannerWorkspaceRenderer(rendererElement, () => this.addTab(TabType.BearScopeDocumentation));
         break;
+      case TabType.RobotDiagnostics:
+        controller = new (class extends NoopController {
+          override showTimeline() {
+            return true;
+          }
+        })();
+        renderer = new RobotDiagnosticsRenderer(rendererElement);
+        break;
       default:
         controller = new NoopController();
         renderer = new NoopRenderer();
@@ -864,7 +874,7 @@ export default class Tabs {
 
   private canOpenSatellite() {
     const type = this.getSelectedTabType();
-    return type !== TabType.PathPlanner && type !== TabType.BearScopeDocumentation;
+    return type !== TabType.PathPlanner && type !== TabType.BearScopeDocumentation && type !== TabType.RobotDiagnostics;
   }
 
   /** Hides or shows the timeline based on the controller request. */

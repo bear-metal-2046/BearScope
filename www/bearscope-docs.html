@@ -22,6 +22,7 @@
         <a href="#field">Load paths in 2D Field</a>
         <a href="#manual-route">Build a manual route</a>
         <a href="#replay">Analyze a replay</a>
+        <a href="#diagnostics">Robot diagnostics</a>
         <a href="#troubleshooting">Troubleshooting</a>
         <a href="#development">Run from VS Code</a>
       </nav>
@@ -191,6 +192,57 @@
           <p class="note">
             Example: If a waypoint result is 0.28 m away, the closest logged pose in that run was 28 cm from the
             waypoint. It measures distance to the pose sample.
+          </p>
+        </section>
+        <section id="diagnostics">
+          <h2>Robot Diagnostics</h2>
+          <p>
+            Open <strong>+ → Robot Diagnostics</strong>, load a log, and scrub the timeline. Choose a log source if you
+            merged runs. The Bear Metal 2026 preset maps this year's telemetry. Under <strong>Telemetry preset</strong>,
+            edit its JSON and click <strong>Apply preset</strong> to reuse the tools with a new game or robot. Save your
+            BearScope layout to keep the preset.
+          </p>
+          <h3>Action readiness</h3>
+          <p>
+            Each configured readiness field is a boolean. The card shows its most recent sample at the cursor. Click it
+            to jump to the sample. The default preset reads <code>Shooter/Is At Target Speed</code> and
+            <code>Chassis/Is At Shooting Angle</code> alongside the shooter and indexer state. This year's autonomous
+            code can wait on both. The teleop binding can wait on speed alone. For exact feed diagnosis, log
+            <code>BearScope/Actions/FeedRequested</code> while the feed request is active. For a new mechanism, replace
+            the preset's readiness and context bindings with that mechanism's checks and state.
+          </p>
+          <h3>Vision</h3>
+          <p>
+            The pose plot compares blue-origin odometry and camera estimates at the cursor. It auto-zooms around those
+            poses. Each camera can publish <code>Vision/&lt;camera&gt;/MegaTag1/Position</code> and
+            <code>MegaTag2/Position</code> as <code>Pose2d</code>, plus <code>IDs Seen</code>,
+            <code>Avg Tag Ambiguity</code>, and <code>Failed Updates</code>. Click peak ambiguity to jump to that
+            sample. Log <code>AcceptedPose</code> as a <code>Pose2d</code> when feeding a measurement to the estimator,
+            and emit <code>Heading Trust</code> and <code>Rejection Reason</code> as strings. Clear the rejection reason
+            when a measurement is accepted.
+          </p>
+          <h3>Swerve and power</h3>
+          <p>
+            Log <code>Chassis/TargetStates</code> and <code>Chassis/MeasuredStates</code> as
+            <code>SwerveModuleState[]</code> in the same order. The card compares speed and steering angle, and ranks
+            threshold crossings for battery voltage, CANivore load, scheduler duration, and drive current. Click an
+            incident to jump to its peak, then inspect nearby telemetry. Adjust the preset's thresholds for your robot.
+            Long swerve logs are sampled for incident ranking.
+          </p>
+          <h3>Command timeline</h3>
+          <p>
+            Record a JSON string per transition under <code>BearScope/Commands/&lt;instance-id&gt;</code>. Use one ID
+            per scheduling instance so overlapping runs of the same command stay separate. Emit the start from the
+            scheduler initialize callback, the finish from its finish callback, and the interruption from its interrupt
+            callback. When you wrap composed commands, apply the same contract to any child you want visible. In the
+            app, bars use the log time range and red bars show interruptions. Click a row to jump to its start.
+          </p>
+          <pre><code>{"name":"Collect Fuel","state":"start"}
+{"name":"Collect Fuel","state":"finish"}
+{"name":"Collect Fuel","state":"interrupt","by":"Shoot Fuel"}</code></pre>
+          <p>
+            Emit one terminal state per run. Existing tinylog messages can be read in Console. The command timeline
+            reads the structured fields above.
           </p>
         </section>
         <section id="troubleshooting">

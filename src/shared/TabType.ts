@@ -22,7 +22,8 @@ enum TabType {
   Points,
   Metadata,
   PathPlanner,
-  BearScopeDocumentation
+  BearScopeDocumentation,
+  RobotDiagnostics
 }
 
 export default TabType;
@@ -32,6 +33,7 @@ export function getAllTabTypes(includePathPlanner = false): TabType[] {
     (tabType) =>
       typeof tabType === "number" &&
       (tabType !== TabType.BearScopeDocumentation || !IS_LITE) &&
+      (tabType !== TabType.RobotDiagnostics || !IS_LITE) &&
       (tabType !== TabType.PathPlanner || includePathPlanner)
   ) as TabType[];
 }
@@ -87,6 +89,8 @@ export function getDefaultTabTitle(type: TabType): string {
       return "PathPlanner";
     case TabType.BearScopeDocumentation:
       return t("tabs.bearScopeDocumentation");
+    case TabType.RobotDiagnostics:
+      return "Robot Diagnostics";
     default:
       return "";
   }
@@ -124,13 +128,16 @@ export function getTabIcon(type: TabType): string {
       return "🛤";
     case TabType.BearScopeDocumentation:
       return "📘";
+    case TabType.RobotDiagnostics:
+      return "⚙️";
     default:
       return "";
   }
 }
 
 export function getTabAccelerator(type: TabType): string {
-  if (type === TabType.Documentation || type === TabType.BearScopeDocumentation) return "";
+  if (type === TabType.Documentation || type === TabType.BearScopeDocumentation || type === TabType.RobotDiagnostics)
+    return "";
   return (
     "Alt+" +
     (() => {
