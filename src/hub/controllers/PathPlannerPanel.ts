@@ -12,6 +12,7 @@ import type {
   Field2dPathPlannerHandle,
   Field2dRendererCommand_TrajectoryObj
 } from "../../shared/renderers/Field2dRenderer";
+import LoggedAutoOverlay from "../LoggedAutoOverlay";
 import {
   PathPlannerAuto,
   PathPlannerPath,
@@ -36,6 +37,7 @@ export default class PathPlannerPanel {
   private readonly issues: HTMLUListElement;
   private readonly link: HTMLButtonElement;
   private readonly replay: PathPlannerReplay;
+  private readonly loggedAuto: LoggedAutoOverlay;
   private readonly manualEnabled: HTMLInputElement;
   private readonly segmentList: HTMLElement;
   private readonly addSegment: HTMLButtonElement;
@@ -53,6 +55,7 @@ export default class PathPlannerPanel {
   ) {
     this.route = root.querySelector<HTMLSelectElement>(".pathplanner-route")!;
     this.replay = new PathPlannerReplay(root.querySelector<HTMLDetailsElement>(".pathplanner-replay")!);
+    this.loggedAuto = new LoggedAutoOverlay(root);
     this.manualEnabled = root.querySelector(".pathplanner-manual-enabled")!;
     this.segmentList = root.querySelector(".pathplanner-manual-segments")!;
     this.addSegment = root.querySelector(".pathplanner-add-segment")!;
@@ -394,6 +397,9 @@ export default class PathPlannerPanel {
       });
     }
     const recorded = this.replay.update(paths, width, height, transform);
-    return { objects: [...this.cachedOverlay.objects, ...recorded], handles };
+    return {
+      objects: [...this.cachedOverlay.objects, ...this.loggedAuto.getOverlay(width, height), ...recorded],
+      handles
+    };
   }
 }

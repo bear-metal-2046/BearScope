@@ -16,7 +16,7 @@ type TimedPose = { time: number; pose: Pose2d };
 type TrackingError = { time: number; meters: number; degrees: number };
 type CommandEvent = { time: number; name: string; active: boolean };
 
-function readPoses(log: Log, key: string): TimedPose[] {
+export function readPoses(log: Log, key: string): TimedPose[] {
   const x = log.getNumber(key + "/translation/x", -Infinity, Infinity);
   const y = log.getNumber(key + "/translation/y", -Infinity, Infinity);
   const rotation = log.getNumber(key + "/rotation/value", -Infinity, Infinity);
@@ -51,11 +51,16 @@ export function analyzePathPlannerReplay(log: Log) {
   const events: CommandEvent[] = [];
   const autoRanges = getRobotStateRanges(log).filter((range) => range.mode === "auto");
   for (const key of keys) {
-    if (/\/PathPlanner\/currentPose$/.test(removeMergePrefix(key))) {
+    if (
+      key.endsWith("/Chassis/OdometryPose") &&
+      keys.includes(key.replace(/Chassis\/OdometryPose$/, "PathPlanner/currentPose"))
+    )
+      continue;
+    if (/\/(?:PathPlanner\/currentPose|Chassis\/OdometryPose)$/.test(removeMergePrefix(key))) {
       const actual = readPoses(log, key);
       if (actual.length === 0) continue;
       traces.push(actual);
-      const target = readPoses(log, key.replace(/currentPose$/, "targetPose"));
+      const target = key.endsWith("/currentPose") ? readPoses(log, key.replace(/currentPose$/, "targetPose")) : [];
       errors.push(
         actual.flatMap(({ time, pose }) => {
           const setpoint = latest(target, time);

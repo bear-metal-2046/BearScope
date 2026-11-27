@@ -395,6 +395,8 @@ hub:
     linkProject: "Link project…"
     loadCurrentProject: "Load Current Project"
     replay: "Replay analysis"
+    loggedAuto: "Show the robot’s logged auto"
+    loggedAutoMissing: "No Auto/SelectedPath sample at this time."
     comparisonRoute: "Manual comparison route"
     useComparisonRoute: "Use manual comparison route"
     addSegment: "Add path segment"

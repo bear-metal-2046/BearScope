@@ -152,6 +152,19 @@
           </p>
           <h3>Planned vs. actual</h3>
           <p>
+            For a code-built auto, enable <strong>Show the robot’s logged auto</strong> in Replay analysis. The yellow
+            line uses the latest <code>Auto/SelectedPath</code> sample at the cursor. It works directly from a log,
+            including autos assembled in Java.
+          </p>
+          <p>
+            On the robot, append generated trajectory poses from every chosen path segment in execution order. Apply the
+            same mirroring, flipping and alliance rules as the follower, exactly once. At auto arm or start, log the
+            resulting blue-origin geometry with <code>Logger.recordOutput("Auto/SelectedPath", poses)</code>, where
+            <code>poses</code> is a <code>Pose2d[]</code>. Log an empty array when no auto is armed to clear a previous
+            route. Record <code>Chassis/OdometryPose</code> for the recorded trail. Record the follower's
+            <code>/PathPlanner/targetPose</code> and <code>/PathPlanner/currentPose</code> for timed tracking error.
+          </p>
+          <p>
             Enable <strong>Show recorded trail and tracking error</strong>. The cyan trail is the recorded robot motion.
             Scrub the main timeline to move the cursor through the position error plot in meters and the absolute
             heading error plot in degrees.
