@@ -230,6 +230,7 @@ export default class Field2dController implements TabController {
 
   refresh(): void {
     this.sourceList.refresh();
+    this.pathPlanner.refreshLog();
   }
 
   newAssets(): void {
@@ -237,7 +238,7 @@ export default class Field2dController implements TabController {
   }
 
   getActiveFields(): string[] {
-    return [...this.sourceList.getActiveFields(), ...ALLIANCE_KEYS];
+    return [...this.sourceList.getActiveFields(), ...ALLIANCE_KEYS, ...this.pathPlanner.getActiveFields()];
   }
 
   showTimeline(): boolean {

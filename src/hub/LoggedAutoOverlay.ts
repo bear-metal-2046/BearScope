@@ -5,7 +5,6 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-
 import { annotatedPose3dTo2d, convertFromCoordinateSystem, grabPose2dArray } from "../shared/geometry";
 import type Log from "../shared/log/Log";
 import { removeMergePrefix } from "../shared/log/LogKeyUtils";
@@ -30,6 +29,24 @@ export default class LoggedAutoOverlay {
     this.status = root.querySelector(".pathplanner-logged-auto-status")!;
   }
 
+  getActiveFields() {
+    return this.enabled.checked
+      ? [
+          ...new Set(
+            window.log
+              .getFieldKeys()
+              .filter((key) => /(?:^|\/)Auto\/SelectedPath(?:\/length)?$/.test(removeMergePrefix(key)))
+              .map((key) => key.replace(/\/length$/, ""))
+          )
+        ]
+      : [];
+  }
+
+  refreshLog() {
+    this.log = undefined;
+    this.cached = undefined;
+  }
+
   getOverlay(width: number, height: number): Field2dRendererCommand_TrajectoryObj[] {
     if (!this.enabled.checked) {
       this.status.textContent = "";
@@ -39,16 +56,15 @@ export default class LoggedAutoOverlay {
     const now = performance.now();
     if (this.log !== log || (this.keys.length === 0 && now - this.checkedAt > 1000)) {
       this.log = log;
-      this.keys = log.getFieldKeys().filter((key) => /(?:^|\/)Auto\/SelectedPath$/.test(removeMergePrefix(key)));
+      this.keys = this.getActiveFields();
       this.cached = undefined;
       this.checkedAt = now;
     }
     const time = window.selection.getRenderTime() ?? log.getTimestampRange()[1];
     let latest: { key: string; timestamp: number } | undefined;
     for (const key of this.keys) {
-      const timestamps =
-        log.getRange(key, time, time)?.timestamps ?? log.getNumber(key + "/length", time, time)?.timestamps;
-      const timestamp = timestamps?.[0];
+      const timestamp =
+        log.getRange(key, time, time)?.timestamps[0] ?? log.getNumber(key + "/length", time, time)?.timestamps[0];
       if (timestamp !== undefined && timestamp <= time && (!latest || timestamp > latest.timestamp))
         latest = { key, timestamp };
     }

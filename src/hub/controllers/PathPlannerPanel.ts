@@ -324,6 +324,15 @@ export default class PathPlannerPanel {
       : [(x - width / 2) * xDirection, (y - height / 2) * yDirection];
   }
 
+  getActiveFields() {
+    return [...this.loggedAuto.getActiveFields(), ...this.replay.getActiveFields()];
+  }
+
+  refreshLog() {
+    this.loggedAuto.refreshLog();
+    this.replay.refreshLog();
+  }
+
   handleDrag(handle: Field2dPathPlannerHandle, position?: Translation2d) {
     if (!this.root.open || this.selectedPath === undefined || this.project !== undefined || this.manualEnabled.checked)
       return;

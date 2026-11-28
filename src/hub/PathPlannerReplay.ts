@@ -12,6 +12,9 @@ import { getRobotStateRanges } from "../shared/log/RobotState";
 import type { Field2dRendererCommand_TrajectoryObj } from "../shared/renderers/Field2dRenderer";
 import type { PathPlannerPath } from "./PathPlanner";
 
+const poseField = /(?:^|\/)(?:PathPlanner\/(?:currentPose|targetPose)|Chassis\/OdometryPose)$/;
+const eventField = /(?:^|\/)(?:CommandsUnique|CommandsAll|PathPlanner\/Events)\/(.+)$/;
+
 type TimedPose = { time: number; pose: Pose2d };
 type TrackingError = { time: number; meters: number; degrees: number };
 type CommandEvent = { time: number; name: string; active: boolean };
@@ -56,7 +59,7 @@ export function analyzePathPlannerReplay(log: Log) {
       keys.includes(key.replace(/Chassis\/OdometryPose$/, "PathPlanner/currentPose"))
     )
       continue;
-    if (/\/(?:PathPlanner\/currentPose|Chassis\/OdometryPose)$/.test(removeMergePrefix(key))) {
+    if (poseField.test(removeMergePrefix(key)) && !key.endsWith("/targetPose")) {
       const actual = readPoses(log, key);
       if (actual.length === 0) continue;
       traces.push(actual);
@@ -84,7 +87,7 @@ export function analyzePathPlannerReplay(log: Log) {
       runs.push(...(autoRanges.length === 0 ? [actual] : windows));
     }
 
-    const match = removeMergePrefix(key).match(/\/(?:CommandsUnique|CommandsAll|PathPlanner\/Events)\/(.+)$/);
+    const match = removeMergePrefix(key).match(eventField);
     if (!match) continue;
     const values = log.getBoolean(key, -Infinity, Infinity);
     if (!values) continue;
@@ -125,6 +128,18 @@ export default class PathPlannerReplay {
     this.events = root.querySelector(".pathplanner-events")!;
     this.waypoint = root.querySelector(".pathplanner-pass-waypoint")!;
     this.passes = root.querySelector(".pathplanner-passes")!;
+  }
+
+  getActiveFields() {
+    if (!this.root.open || !this.root.closest("details.pathplanner")?.hasAttribute("open")) return [];
+    return window.log.getFieldKeys().filter((key) => {
+      const name = removeMergePrefix(key);
+      return poseField.test(name) || eventField.test(name);
+    });
+  }
+
+  refreshLog() {
+    this.log = undefined;
   }
 
   private jump(label: string, time: number) {
