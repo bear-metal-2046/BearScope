@@ -61,7 +61,7 @@ import { Units } from "../../shared/units";
 import { createUUID, formatDate, getWpilibDocsUrl } from "../../shared/util";
 import { GITHUB_REPOSITORY } from "../github";
 import { getDefaultDsLayout } from "../lite/dsLayout";
-import { analyzeWithClaude } from "./DiagnosticAnalysis";
+import { analyzeDiagnostics } from "./DiagnosticAnalysis";
 import {
   AKIT_PATH_INPUT,
   AKIT_PATH_INPUT_PERIOD,
@@ -260,10 +260,15 @@ async function handleHubMessage(window: BrowserWindow, message: NamedMessage) {
   let windowId = window.id;
   switch (message.name) {
     case "bearscope-analyze-diagnostics": {
-      const { id, prompt } = message.data ?? {};
+      const { id, prompt, provider, key, model, chat } = message.data ?? {};
       if (typeof id !== "string" || id.length > 100) break;
-      const result = await analyzeWithClaude(window, prompt);
-      if (!window.isDestroyed()) sendMessage(window, "bearscope-analysis-result", { id, result });
+      const chatRequest = provider === "gemini" && chat === true;
+      const result = await analyzeDiagnostics(
+        window,
+        prompt,
+        provider === "gemini" ? { key, model, chat: chatRequest } : undefined
+      );
+      if (!window.isDestroyed()) sendMessage(window, "bearscope-analysis-result", { id, result, chat: chatRequest });
       break;
     }
     case "pathplanner-workspace-viewport":

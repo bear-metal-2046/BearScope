@@ -601,14 +601,22 @@ export default class Tabs {
         controller = new NoopController();
         renderer = new PathPlannerWorkspaceRenderer(rendererElement, () => this.addTab(TabType.BearScopeDocumentation));
         break;
-      case TabType.RobotDiagnostics:
+      case TabType.RobotDiagnostics: {
+        const diagnostics = new RobotDiagnosticsRenderer(rendererElement, () => controller.UUID);
         controller = new (class extends NoopController {
           override showTimeline() {
             return true;
           }
+          override getActiveFields() {
+            return diagnostics.getActiveFields();
+          }
+          override refresh() {
+            diagnostics.refreshLog();
+          }
         })();
-        renderer = new RobotDiagnosticsRenderer(rendererElement, () => controller.UUID);
+        renderer = diagnostics;
         break;
+      }
       default:
         controller = new NoopController();
         renderer = new NoopRenderer();
@@ -671,9 +679,9 @@ export default class Tabs {
     if (controller instanceof Field2dController) controller.updatePathPlannerProject(snapshot, invalid);
   }
 
-  showDiagnosticAnalysis(data: { id: string; result: string }) {
+  showDiagnosticAnalysis(data: { id: string; result: string; chat?: boolean }) {
     const tab = this.tabList.find((tab) => tab.controller.UUID === data.id);
-    if (tab?.renderer instanceof RobotDiagnosticsRenderer) tab.renderer.showAnalysis(data.result);
+    if (tab?.renderer instanceof RobotDiagnosticsRenderer) tab.renderer.showAnalysis(data.result, data.chat);
   }
 
   /** Closes the specified tab. */

@@ -205,6 +205,25 @@
           </p>
           <h3>Action readiness</h3>
           <p>
+            Open <strong>Telemetry preset → Pick a field from the selected log</strong> to search by topic name, see its
+            type, and preview the value at the replay cursor. Enter a row label, choose Context or Readiness, and click
+            <strong>Add or update row</strong>. A matching label in that section is replaced. Readiness requires a
+            Boolean. Preset bindings accept both a full sidebar path and a short name. BearScope keeps samples within
+            the selected log source and reports when a field is missing, loading or unavailable, or first appears later
+            in the run.
+          </p>
+          <h3>Compare autonomous runs</h3>
+          <p>
+            Load a log with two autonomous periods, or merge two logs into one session. In
+            <strong>Robot Diagnostics → Compare autonomous runs</strong>, click <strong>Find runs</strong> and choose
+            two distinct runs. BearScope detects auto start from each source's Driver Station enabled and autonomous or
+            robot mode signals. It draws the recorded trails on the same blue-origin scale using
+            <code>PathPlanner/currentPose</code> or <code>Chassis/OdometryPose</code>. Use the elapsed-time slider to
+            see each robot's position at the same time after auto starts. Click an event or
+            <strong>Jump to this run</strong> to move the main replay cursor. The event list uses the structured command
+            fields described below.
+          </p>
+          <p>
             Each configured readiness field is a boolean. The card shows its most recent sample at the cursor. Click it
             to jump to the sample. The default preset reads <code>Shooter/Is At Target Speed</code> and
             <code>Chassis/Is At Shooting Angle</code> alongside the shooter and indexer state. This year's autonomous
@@ -281,6 +300,34 @@ Logger.recordOutput("BearScope/Commands/" + instanceId,
         </section>
         <section id="ai-review">
           <h2>AI log review</h2>
+          <h3>Chat with Gemini about a log</h3>
+          <ol>
+            <li>Open a log and go to <strong>Robot Diagnostics → Gemini log chat</strong>.</li>
+            <li>
+              Under <strong>Google AI Studio settings</strong>, paste your API key into the masked field and enter the
+              Gemini model ID available to your account (the part after <code>models/</code>). The key and conversation
+              clear when you close the diagnostics tab or quit BearScope.
+            </li>
+            <li>
+              Ask a question, such as “What was battery voltage around 15 seconds?” BearScope asks before sending your
+              question and recent conversation to Google.
+            </li>
+            <li>
+              If Gemini requests a field search or time range, inspect the preview and choose
+              <strong>Send readings</strong> or <strong>Skip</strong>. The model can request additional ranges as you
+              continue. If an answer includes a valid log timestamp, click <strong>Jump to</strong> to inspect it on the
+              timeline.
+            </li>
+          </ol>
+          <p>
+            BearScope shares the approved text, including prior shared readings retained in the recent conversation. It
+            loads requested fields locally as needed and previews bounded samples of scalar and array fields. Large logs
+            may take a few seconds to decode a field. Numeric reads include minimum and maximum values and their
+            timestamps across the requested interval, even when a brief spike falls between previewed samples. For
+            structured signals, Gemini can search for decoded child fields such as pose X and Y. It cannot read another
+            file or modify the log. Loading a different log clears the conversation. API requests may incur charges.
+          </p>
+          <h3>Send a one-off summary</h3>
           <ol>
             <li>
               In <strong>Robot Diagnostics</strong>, choose a log source and scrub to the moment you want to
@@ -292,15 +339,16 @@ Logger.recordOutput("BearScope/Commands/" + instanceId,
               is never attached.
             </li>
             <li>
-              Use <strong>Copy for ChatGPT or Claude</strong> to paste it into your own chat, or use
-              <strong>Send to Claude</strong> to see the reply in BearScope. BearScope asks before sending each API
-              request.
+              Use <strong>Copy summary</strong> to paste it into your own chat, or use
+              <strong>Send to Gemini</strong> or <strong>Send to Claude</strong> to see the reply in BearScope.
+              BearScope asks before sending each API request.
             </li>
           </ol>
           <p>
-            For in-app review, launch BearScope with <code>ANTHROPIC_API_KEY</code> and
-            <code>BEARSCOPE_CLAUDE_MODEL</code> in its environment. Use a model ID available to your Anthropic account.
-            Keep the key out of source files, presets, and VS Code launch configuration. Requests may incur API charges.
+            Gemini uses the settings from the chat sidebar. For Claude, launch BearScope with
+            <code>ANTHROPIC_API_KEY</code> and <code>BEARSCOPE_CLAUDE_MODEL</code> in its environment. Use a model ID
+            available to your Anthropic account. Keep the key out of source files, presets, and VS Code launch
+            configuration. Requests may incur API charges.
           </p>
           <p>
             Check any suggested explanation against the indicated timestamps in the original log. The summary is a

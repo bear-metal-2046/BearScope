@@ -2276,8 +2276,18 @@ div.tab.tab-selected {
 .robot-diagnostics {
   position: absolute;
   inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.robot-diagnostics[hidden] {
+  display: none;
+}
+
+.diagnostics-main {
+  flex: 1;
+  min-width: 0;
   overflow: auto;
-  box-sizing: border-box;
   padding: 16px;
 }
 
@@ -2305,6 +2315,37 @@ div.tab.tab-selected {
   border: 1px solid #8887;
   border-radius: 8px;
   padding: 12px;
+}
+
+.diagnostics-auto-comparison {
+  grid-column: 1 / -1;
+}
+
+.diagnostics-auto-trails,
+.diagnostics-auto-events {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.diagnostics-auto-trails canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.diagnostics-auto-events > div {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.diagnostics-picker {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.diagnostics-picker select {
+  max-width: 100%;
 }
 
 .robot-diagnostics button {
@@ -2339,4 +2380,61 @@ div.tab.tab-selected {
 
 .diagnostics-span.interrupted {
   background: #d44747;
+}
+
+.diagnostics-chat {
+  flex: none;
+  width: min(370px, 46%);
+  box-sizing: border-box;
+  padding: 12px;
+  background: #f5f2eb;
+  border-inline-start: 1px solid #8887;
+  overflow: auto;
+}
+
+.diagnostics-chat label {
+  display: block;
+  margin-block: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .diagnostics-chat {
+    background: #191919;
+  }
+}
+
+.diagnostics-chat input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.robot-diagnostics .diagnostics-chat textarea {
+  min-height: 72px;
+}
+
+.diagnostics-chat-history {
+  max-height: 42vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-chat-history > div {
+  border-bottom: 1px solid #8887;
+  margin-block: 8px;
+  padding-bottom: 8px;
+}
+
+.diagnostics-chat-history p {
+  margin: 4px 0;
+}
+
+@media (max-width: 680px) {
+  .diagnostics-chat {
+    width: 100%;
+  }
+  .robot-diagnostics.diagnostics-chat-visible .diagnostics-main {
+    display: none;
+  }
 }

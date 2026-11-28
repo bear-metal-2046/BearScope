@@ -8,6 +8,7 @@
 import { grabModuleVelocities, grabPose2d } from "../shared/geometry";
 import type Log from "../shared/log/Log";
 import { removeMergePrefix } from "../shared/log/LogKeyUtils";
+import LoggableType from "../shared/log/LoggableType";
 
 export type DiagnosticRow = { label: string; value: string; time?: number; end?: number };
 export const defaultDiagnostics = {
@@ -80,18 +81,43 @@ function logicalKey(key: string) {
     .replace(/^(?:AdvantageKit\/)?RealOutputs\//, "");
 }
 
+export function diagnosticSource(key: string) {
+  return /^\/?(Log\d+)(?=\/)/.exec(key)?.[1] ?? "";
+}
+
+function bindingName(key: string) {
+  return logicalKey(key.trim());
+}
+
+export function getDiagnosticFields(log: Log, preset: DiagnosticsPreset) {
+  const exact = new Set(
+    [
+      ...[...preset.readiness, ...preset.context, ...preset.thresholds].map(({ key }) => key),
+      preset.odometry,
+      preset.moduleTargets,
+      preset.moduleMeasured
+    ].map(bindingName)
+  );
+  return log.getFieldKeys().filter((key) => {
+    const name = logicalKey(key);
+    return exact.has(name) || name.startsWith(preset.visionPrefix + "/") || name.startsWith(preset.commandPrefix + "/");
+  });
+}
+
 function sample<T>(series: { timestamps: number[]; values: T[] } | undefined, time: number): T | undefined {
   const index = series?.timestamps.findLastIndex((timestamp) => timestamp <= time) ?? -1;
   return index === -1 ? undefined : series?.values[index];
 }
 
-function format(value: unknown): string {
+export function formatDiagnosticValue(value: unknown): string {
   if (typeof value === "number") return value.toFixed(2);
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "string" && value.length) return value;
   if (Array.isArray(value) && value.length) return value.join(", ");
   return "No sample";
 }
+
+const format = formatDiagnosticValue;
 
 type DiagnosticHistory = { incidents: DiagnosticRow[]; commands: DiagnosticRow[] };
 
@@ -102,11 +128,20 @@ export function diagnose(
   match: string,
   previous?: DiagnosticHistory
 ) {
-  const keys = log
-    .getFieldKeys()
-    .filter((key) => (/^\/?Log\d+(?=\/)/.exec(key)?.[0].replace(/^\//, "") ?? "") === match);
+  const keys = log.getFieldKeys().filter((key) => diagnosticSource(key) === match);
+  const exactKeys = new Set(keys);
   const byName = new Map(keys.map((key) => [logicalKey(key), key]));
-  const lookup = (name: string) => byName.get(name) ?? name;
+  const lookup = (name: string) => (exactKeys.has(name) ? name : byName.get(bindingName(name)) ?? "");
+  const missing = (field: string, expected?: LoggableType) => {
+    if (!field) return "Field missing in this log";
+    if (expected !== undefined && log.getType(field) !== expected) return "Expected a Boolean field";
+    const first = log.getField(field)?.getTimestamps()[0];
+    return first === undefined
+      ? "Samples unavailable or loading"
+      : first > time
+      ? `First sample at ${first.toFixed(2)} s`
+      : "No sample";
+  };
   const read = (name: string) => {
     const data = log.getRange(lookup(name), time, time);
     return sample(data, time);
@@ -118,11 +153,14 @@ export function diagnose(
     const index = data?.timestamps.findLastIndex((timestamp) => timestamp <= time) ?? -1;
     return {
       label,
-      value: value === undefined ? "No sample" : value ? "Ready" : "Waiting",
+      value: value === undefined ? missing(field, LoggableType.Boolean) : value ? "Ready" : "Waiting",
       time: data?.timestamps[index]
     };
   });
-  const context = preset.context.map(({ label, key }) => ({ label, value: format(read(key)) }));
+  const context = preset.context.map(({ label, key }) => {
+    const value = read(key);
+    return { label, value: value === undefined ? missing(lookup(key)) : format(value) };
+  });
   const incidents: (DiagnosticRow & { score: number })[] = [];
   for (const rule of previous ? [] : preset.thresholds) {
     const series = log.getNumber(lookup(rule.key), -Infinity, Infinity);
@@ -145,8 +183,8 @@ export function diagnose(
     if (peak) incidents.push(peak);
   }
 
-  const targetKey = byName.get(preset.moduleTargets);
-  const measuredKey = byName.get(preset.moduleMeasured);
+  const targetKey = lookup(preset.moduleTargets);
+  const measuredKey = lookup(preset.moduleMeasured);
   const modules: DiagnosticRow[] = [];
   if (targetKey && measuredKey) {
     const getStates = (key: string, at: number) => grabModuleVelocities(log, key, at);
@@ -236,9 +274,22 @@ export function diagnose(
     }
   }
 
+  incidents.sort((a, b) => b.score - a.score);
+  return {
+    readiness,
+    context,
+    incidents: previous?.incidents ?? incidents.slice(0, 30),
+    modules,
+    vision,
+    fieldPoses,
+    commands: previous?.commands ?? readDiagnosticCommands(log, keys, preset.commandPrefix)
+  };
+}
+
+export function readDiagnosticCommands(log: Log, keys: string[], prefix: string) {
   const commands: DiagnosticRow[] = [];
-  for (const [name, key] of previous ? [] : byName) {
-    if (!name.startsWith(preset.commandPrefix + "/")) continue;
+  for (const key of keys) {
+    if (!logicalKey(key).startsWith(prefix + "/")) continue;
     const events = log.getString(key, -Infinity, Infinity);
     let open: DiagnosticRow | undefined;
     events?.values.forEach((value, index) => {
@@ -253,7 +304,7 @@ export function diagnose(
           const value =
             data.state === "finish"
               ? "Finished"
-              : typeof data.by === "string"
+              : typeof data.by === "string" && data.by.trim()
               ? "Interrupted by " + data.by
               : "Interrupted";
           if (open) Object.assign(open, { value, end: at });
@@ -265,15 +316,5 @@ export function diagnose(
       }
     });
   }
-  incidents.sort((a, b) => b.score - a.score);
-  commands.sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
-  return {
-    readiness,
-    context,
-    incidents: previous?.incidents ?? incidents.slice(0, 30),
-    modules,
-    vision,
-    fieldPoses,
-    commands: previous?.commands ?? commands
-  };
+  return commands.sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
 }

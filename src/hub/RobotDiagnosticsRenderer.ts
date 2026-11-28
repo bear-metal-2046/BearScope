@@ -7,8 +7,19 @@
 
 import type { AdvantageScopeAssets } from "../shared/AdvantageScopeAssets";
 import type Log from "../shared/log/Log";
+import LoggableType from "../shared/log/LoggableType";
 import { NoopRenderer } from "../shared/renderers/TabRenderer";
-import { defaultDiagnostics, diagnose, parsePreset, type DiagnosticRow } from "./RobotDiagnostics";
+import AutoComparison from "./AutoComparison";
+import DiagnosticChat from "./DiagnosticChat";
+import {
+  defaultDiagnostics,
+  diagnose,
+  diagnosticSource,
+  formatDiagnosticValue,
+  getDiagnosticFields,
+  parsePreset,
+  type DiagnosticRow
+} from "./RobotDiagnostics";
 
 export default class RobotDiagnosticsRenderer extends NoopRenderer {
   private preset = defaultDiagnostics;
@@ -20,13 +31,30 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
   private previous?: ReturnType<typeof diagnose>;
   private time?: number;
   private updated = -Infinity;
+  private readonly chat: DiagnosticChat;
+  private readonly comparison: AutoComparison;
+  private readonly picker: HTMLSelectElement;
+  private summaryPending = false;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly tabId: () => string
   ) {
     super();
+    this.chat = new DiagnosticChat(root, (prompt, settings) => {
+      window.sendMainMessage("bearscope-analyze-diagnostics", {
+        id: this.tabId(),
+        prompt,
+        provider: "gemini",
+        chat: true,
+        ...settings
+      });
+    });
     this.source = root.querySelector(".diagnostics-log")!;
+    this.comparison = new AutoComparison(root);
+    this.picker = root.querySelector(".diagnostics-picker-field")!;
+    root.querySelector(".diagnostics-picker-search")!.addEventListener("input", () => this.updatePicker());
+    this.picker.onchange = () => this.updatePickerSample();
     this.field = root.querySelector(".diagnostics-field")!;
     this.field.onchange = () => this.drawPoses(this.previous?.fieldPoses ?? []);
     this.fieldImage.onload = () => this.drawPoses(this.previous?.fieldPoses ?? []);
@@ -52,6 +80,35 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
     });
     this.source.addEventListener("change", () => {
       this.previous = undefined;
+      this.updatePicker();
+    });
+    root.querySelector(".diagnostics-picker-add")!.addEventListener("click", () => {
+      const field = this.picker.value;
+      if (!field) return;
+      const section =
+        root.querySelector<HTMLSelectElement>(".diagnostics-picker-section")!.value === "readiness"
+          ? "readiness"
+          : "context";
+      if (section === "readiness" && window.log.getType(field) !== LoggableType.Boolean) {
+        status.textContent = "Choose a Boolean field for Readiness.";
+        return;
+      }
+      try {
+        const preset = parsePreset(editor.value);
+        const label =
+          root.querySelector<HTMLInputElement>(".diagnostics-picker-label")!.value.trim() || field.split("/").at(-1)!;
+        const existing = preset[section].findIndex((row) => row.label === label);
+        preset[section].splice(existing < 0 ? preset[section].length : existing, existing < 0 ? 0 : 1, {
+          label,
+          key: field
+        });
+        this.preset = preset;
+        this.previous = undefined;
+        showPreset();
+        status.textContent = "Updated " + label;
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : "Invalid preset.";
+      }
     });
     showPreset();
 
@@ -81,20 +138,101 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
         this.showAnalysis("Select and copy the summary with Ctrl+C.");
       }
     });
-    root.querySelector(".diagnostics-send")!.addEventListener("click", () => {
+    const sendSummary = (gemini: boolean) => {
+      if (this.summaryPending) return;
       if (!prompt.value.trim()) {
         this.showAnalysis("Prepare a summary first.");
         return;
       }
-      this.showAnalysis("Waiting for Claude…");
-      root.querySelector<HTMLButtonElement>(".diagnostics-send")!.disabled = true;
-      window.sendMainMessage("bearscope-analyze-diagnostics", { id: this.tabId(), prompt: prompt.value });
+      const settings = gemini ? this.chat.settings() : undefined;
+      if (gemini && (!settings?.key || !settings.model)) {
+        this.showAnalysis("Enter a Google AI Studio key and model under Gemini log chat.");
+        this.chat.open(true);
+        return;
+      }
+      this.showAnalysis(`Waiting for ${gemini ? "Gemini" : "Claude"}…`);
+      this.setSummaryPending(true);
+      window.sendMainMessage("bearscope-analyze-diagnostics", {
+        id: this.tabId(),
+        prompt: prompt.value,
+        provider: gemini ? "gemini" : "claude",
+        ...settings
+      });
+    };
+    root.querySelector(".diagnostics-send")!.addEventListener("click", () => sendSummary(false));
+    root.querySelector(".diagnostics-send-gemini")!.addEventListener("click", () => sendSummary(true));
+  }
+
+  private setSummaryPending(pending: boolean) {
+    this.summaryPending = pending;
+    this.root.querySelectorAll<HTMLButtonElement>(".diagnostics-send, .diagnostics-send-gemini").forEach((button) => {
+      button.disabled = pending;
     });
   }
 
-  showAnalysis(result: string) {
+  showAnalysis(result: string, chat?: boolean) {
+    if (chat) {
+      this.chat.receive(result);
+      return;
+    }
     this.root.querySelector<HTMLTextAreaElement>(".diagnostics-answer")!.value = result;
-    this.root.querySelector<HTMLButtonElement>(".diagnostics-send")!.disabled = false;
+    this.setSummaryPending(false);
+  }
+
+  getActiveFields() {
+    return [
+      ...getDiagnosticFields(window.log, this.preset),
+      ...this.chat.getActiveFields(),
+      ...this.comparison.getActiveFields(window.log),
+      ...(this.picker.value && this.picker.closest("details")?.open ? [this.picker.value] : [])
+    ];
+  }
+
+  private updatePicker() {
+    const value = this.picker.value;
+    const query = this.root.querySelector<HTMLInputElement>(".diagnostics-picker-search")!.value.trim().toLowerCase();
+    const options = window.log
+      .getFieldKeys()
+      .filter((key) => {
+        const type = window.log.getType(key);
+        return (
+          diagnosticSource(key) === this.source.value &&
+          type !== null &&
+          type !== LoggableType.Raw &&
+          type !== LoggableType.Empty &&
+          key.toLowerCase().includes(query)
+        );
+      })
+      .slice(0, 250);
+    this.picker.replaceChildren(
+      new Option(options.length ? "Select a field" : "No matching fields", ""),
+      ...options.map((key) => new Option(`${key} (${LoggableType[window.log.getType(key)!]})`, key))
+    );
+    if (options.includes(value)) this.picker.value = value;
+    this.updatePickerSample();
+  }
+
+  private updatePickerSample() {
+    const value = this.picker.value;
+    const preview = this.root.querySelector<HTMLElement>(".diagnostics-picker-sample")!;
+    if (!value) {
+      preview.textContent = "";
+      return;
+    }
+    const time = window.selection.getRenderTime() ?? window.log.getTimestampRange()[1];
+    const data = window.log.getRange(value, time, time);
+    const index = data?.timestamps.findLastIndex((timestamp) => timestamp <= time) ?? -1;
+    const first = window.log.getField(value)?.getTimestamps()[0];
+    preview.textContent =
+      index >= 0
+        ? "At cursor: " + formatDiagnosticValue(data?.values[index])
+        : first === undefined
+        ? "Samples unavailable or loading"
+        : `First sample at ${first.toFixed(2)} s`;
+  }
+
+  refreshLog() {
+    this.previous = undefined;
   }
 
   override saveState() {
@@ -201,6 +339,7 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
   }
 
   override render() {
+    this.chat.updateLog(window.log);
     if (this.assets !== window.assets) {
       this.assets = window.assets;
       const value = this.field.value;
@@ -223,7 +362,10 @@ export default class RobotDiagnosticsRenderer extends NoopRenderer {
       if (!matches.size) matches.add("");
       this.source.replaceChildren(...[...matches].sort().map((match) => new Option(match || "Primary log", match)));
       if (matches.has(value)) this.source.value = value;
+      this.updatePicker();
     }
+    this.comparison.update(log, this.preset, refresh);
+    if (!refresh) this.updatePickerSample();
     this.evaluatedLog = log;
     this.time = time;
     const data = diagnose(log, this.preset, time, this.source.value, refresh ? undefined : this.previous);

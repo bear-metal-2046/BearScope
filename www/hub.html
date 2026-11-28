@@ -842,60 +842,138 @@
         </div>
       </div>
       <div id="renderer15" class="robot-diagnostics">
-        <header>
-          <h1>Robot Diagnostics</h1>
-          <label
-            >Log source
-            <select class="diagnostics-log"></select
-          ></label>
-        </header>
-        <details>
-          <summary>Telemetry preset</summary>
-          <label>Preset JSON <textarea class="diagnostics-preset" spellcheck="false"></textarea></label>
-          <button class="diagnostics-apply" type="button">Apply preset</button>
-          <button class="diagnostics-reset" type="button">Reset to Bear Metal 2026</button>
-          <p class="diagnostics-status" role="status"></p>
-        </details>
-        <details class="diagnostics-ai">
-          <summary>AI log review</summary>
-          <button type="button" class="diagnostics-generate">Prepare summary</button>
-          <label
-            >Summary to share <textarea class="diagnostics-prompt" maxlength="16000" spellcheck="false"></textarea>
-          </label>
-          <button type="button" class="diagnostics-copy">Copy for ChatGPT or Claude</button>
-          <button type="button" class="diagnostics-send">Send to Claude</button>
-          <textarea class="diagnostics-answer" readonly aria-label="AI analysis result"></textarea>
-        </details>
-        <div class="diagnostics-grid">
-          <section>
-            <h2>Action readiness</h2>
-            <div class="diagnostics-readiness"></div>
-          </section>
-          <section>
-            <h2>Vision</h2>
+        <div class="diagnostics-main">
+          <header>
+            <h1>Robot Diagnostics</h1>
+            <button class="diagnostics-open-chat" type="button" aria-expanded="false">Gemini log chat</button>
             <label
-              >Field
-              <select class="diagnostics-field">
-                <option value="">Auto-zoom</option>
-              </select></label
-            >
-            <canvas
-              class="diagnostics-poses"
-              width="420"
-              height="190"
-              aria-label="Camera estimates and odometry"
-            ></canvas>
-            <div class="diagnostics-vision"></div>
-          </section>
-          <section>
-            <h2>Swerve and power</h2>
-            <div class="diagnostics-incidents"></div>
-          </section>
-          <section>
-            <h2>Command timeline</h2>
-            <div class="diagnostics-commands"></div>
-          </section>
+              >Log source
+              <select class="diagnostics-log"></select
+            ></label>
+          </header>
+          <details>
+            <summary>Telemetry preset</summary>
+            <label>Preset JSON <textarea class="diagnostics-preset" spellcheck="false"></textarea></label>
+            <button class="diagnostics-apply" type="button">Apply preset</button>
+            <button class="diagnostics-reset" type="button">Reset to Bear Metal 2026</button>
+            <p class="diagnostics-status" role="status"></p>
+            <fieldset class="diagnostics-picker">
+              <legend>Pick a field from the selected log</legend>
+              <label>Find field <input class="diagnostics-picker-search" type="search" /></label>
+              <label
+                >Field
+                <select class="diagnostics-picker-field"></select
+              ></label>
+              <p class="diagnostics-picker-sample" role="status"></p>
+              <label>Row label <input class="diagnostics-picker-label" type="text" /></label>
+              <label
+                >Section
+                <select class="diagnostics-picker-section">
+                  <option value="context">Context</option>
+                  <option value="readiness">Readiness (Boolean)</option>
+                </select></label
+              >
+              <button class="diagnostics-picker-add" type="button">Add or update row</button>
+            </fieldset>
+          </details>
+          <details class="diagnostics-ai">
+            <summary>AI log review</summary>
+            <button type="button" class="diagnostics-generate">Prepare summary</button>
+            <label
+              >Summary to share <textarea class="diagnostics-prompt" maxlength="16000" spellcheck="false"></textarea>
+            </label>
+            <button type="button" class="diagnostics-copy">Copy summary</button>
+            <button type="button" class="diagnostics-send">Send to Claude</button>
+            <button type="button" class="diagnostics-send-gemini">Send to Gemini</button>
+            <textarea class="diagnostics-answer" readonly aria-label="AI analysis result"></textarea>
+          </details>
+          <div class="diagnostics-grid">
+            <section class="diagnostics-auto-comparison">
+              <h2>Compare autonomous runs</h2>
+              <button class="diagnostics-compare-autos" type="button">Find runs</button>
+              <label
+                >Run A
+                <select class="diagnostics-auto-a"></select
+              ></label>
+              <label
+                >Run B
+                <select class="diagnostics-auto-b"></select
+              ></label>
+              <p class="diagnostics-auto-status" role="status"></p>
+              <label
+                >Elapsed time <input class="diagnostics-auto-time" type="range" min="0" value="0" step="0.02" disabled
+              /></label>
+              <output class="diagnostics-auto-clock"></output>
+              <div class="diagnostics-auto-trails"></div>
+              <div class="diagnostics-auto-events"></div>
+            </section>
+            <section>
+              <h2>Action readiness</h2>
+              <div class="diagnostics-readiness"></div>
+            </section>
+            <section>
+              <h2>Vision</h2>
+              <label
+                >Field
+                <select class="diagnostics-field">
+                  <option value="">Auto-zoom</option>
+                </select></label
+              >
+              <canvas
+                class="diagnostics-poses"
+                width="420"
+                height="190"
+                aria-label="Camera estimates and odometry"
+              ></canvas>
+              <div class="diagnostics-vision"></div>
+            </section>
+            <section>
+              <h2>Swerve and power</h2>
+              <div class="diagnostics-incidents"></div>
+            </section>
+            <section>
+              <h2>Command timeline</h2>
+              <div class="diagnostics-commands"></div>
+            </section>
+          </div>
         </div>
+        <aside class="diagnostics-chat" aria-label="Gemini log chat" hidden>
+          <header>
+            <h2>Gemini log chat</h2>
+            <button type="button" class="diagnostics-close-chat">Close</button>
+          </header>
+          <details class="diagnostics-gemini-settings" open>
+            <summary>Google AI Studio settings</summary>
+            <label
+              >API key
+              <input
+                class="diagnostics-gemini-key"
+                type="password"
+                maxlength="512"
+                autocomplete="off"
+                spellcheck="false"
+            /></label>
+            <label
+              >Model ID
+              <input
+                class="diagnostics-gemini-model"
+                type="text"
+                maxlength="100"
+                placeholder="gemini-…"
+                spellcheck="false"
+            /></label>
+          </details>
+          <div class="diagnostics-chat-history" role="log" aria-label="Conversation"></div>
+          <div class="diagnostics-chat-review" hidden>
+            <label>Requested log data <textarea readonly></textarea></label>
+            <button type="button" class="diagnostics-share-data">Send readings</button>
+            <button type="button" class="diagnostics-skip-data">Skip</button>
+          </div>
+          <label>Ask about the loaded log <textarea class="diagnostics-chat-input" maxlength="2000"></textarea></label>
+          <p class="diagnostics-chat-status" role="status"></p>
+          <button type="button" class="diagnostics-chat-send">Send question</button>
+          <button type="button" class="diagnostics-chat-reset">New chat</button>
+        </aside>
       </div>
     </span>
 
